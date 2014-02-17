@@ -73,7 +73,7 @@ if targetmode == "Acquire":
 		target_acquire_class = opts.target_acquire_class
 		target_acquire_count = int(opts.target_acquire_count)
 		target_acquire_rate = float(opts.target_acquire_rate)
-		target_acquire_classdir = packagepath + '/media/TrainImages/{}/'.format(target_acquire_class)
+		target_acquire_classdir = packagepath + '/media/UnmappedImages/{}/'.format(target_acquire_class)
 
 		if not os.path.exists(target_acquire_classdir):
 			os.makedirs(target_acquire_classdir,0777)
