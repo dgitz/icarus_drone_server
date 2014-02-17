@@ -1,11 +1,12 @@
 #!/usr/bin/python
+#Used for Creating Simulated Training Images.
 min_factor = 0.08 #Minimum scaling factor
 max_factor = 0.12 #Maximum scaling factor
 leftmax_rotate_angle = -30.0 #Left-most maximum rotation angle, in degrees
 rightmax_rotate_angle = 30.0 #Right-most maximum rotation angle, in degrees
 
 
-
+import roslib
 import cv2
 import os
 from os import listdir
@@ -19,7 +20,7 @@ import numpy as np
 from optparse import OptionParser
 parser = OptionParser("createtrainingimages.py [options]")
 parser.add_option("--Trials",dest="Trials",default="1")
-parser.add_option("--Patterns",dest="Patterns",default="5")
+parser.add_option("--Patterns",dest="Patterns",default="5",help="Training Patterns per Class")
 parser.add_option("--UseParallel",dest="UseParallel",default='True')
 (opts,args) = parser.parse_args()
 Trials = int(opts.Trials)
@@ -31,11 +32,11 @@ Patterns=int(opts.Patterns)
 ppservers = ()
 job_server = pp.Server(4,ppservers=ppservers)
 
-
-masterimage_dir = os.getcwd()+'/../media/MasterImages/'
-trainimage_dir = os.getcwd()+'/../media/SimulatedImages/'+time.strftime("%Y_%m_%d_%H_%M_%S")+"/"
+packagepath = roslib.packages.get_pkg_dir('icarus_drone_server')
+masterimage_dir = packagepath +'/media/MasterImages/'
+trainimage_dir = packagepath +'/media/SimulatedImages/'+time.strftime("%Y_%m_%d_%H_%M_%S")+"/"
 os.mkdir(trainimage_dir)
-environmentimage_dir = os.getcwd()+'/../media/EnvironmentImages/'
+environmentimage_dir = packagepath +'/media/EnvironmentImages/'
 avg_seqtime = 0.0
 avg_partime = 0.0
 masterimage_names = [ f for f in listdir(masterimage_dir) if isfile(join(masterimage_dir,f)) ]

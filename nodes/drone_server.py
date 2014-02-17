@@ -1,6 +1,7 @@
 #!/usr/bin/python
 import roslib
 roslib.load_manifest('icarus_drone_server')
+packagepath = roslib.packages.get_pkg_dir('icarus_drone_server')
 import rospy
 from std_msgs.msg import String, Header
 from sensor_msgs.msg import NavSatFix, NavSatStatus, Imu,CameraInfo
@@ -72,7 +73,7 @@ if targetmode == "Acquire":
 		target_acquire_class = opts.target_acquire_class
 		target_acquire_count = int(opts.target_acquire_count)
 		target_acquire_rate = float(opts.target_acquire_rate)
-		target_acquire_classdir = '../media/TrainImages/{}/'.format(target_acquire_class)
+		target_acquire_classdir = packagepath + '/media/TrainImages/{}/'.format(target_acquire_class)
 
 		if not os.path.exists(target_acquire_classdir):
 			os.makedirs(target_acquire_classdir,0777)
@@ -171,8 +172,8 @@ def mainloop():
 	curtime = starttime
 	user_command = "q"
 	#device_mc.changemode(mavlink.MAV_MODE_PREFLIGHT)		
-	print "Waiting..."
-	rospy.sleep(1)
+	print "Waiting 30 seconds..."
+	rospy.sleep(30)
 	#device_mc.changemode(mavlink.MAV_MODE_MANUAL_DISARMED)	
 	
         

@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-
+import roslib
 import os
 import time
 import random
@@ -28,7 +28,8 @@ import pp
 parser = OptionParser("trainnets.py [options]")
 parser.add_option("--TrainNet",dest="TrainNets",default="ALL")#Options are: ALL,CLASSNET,ROWNET,COLNET
 parser.add_option("--Verbose",dest="Verbose",default=False)
-parser.add_option("--UseParallel",dest="UseParallel",default='False')
+parser.add_option("--UseParallel",dest="UseParallel",default='True')
+parser.add_option('--TrainMode',dest="TrainMode",default="Real",help="Real,Simulated")
 (opts,args) = parser.parse_args()
 TrainNets = opts.TrainNets
 Verbose = opts.Verbose
@@ -40,10 +41,26 @@ if opts.Verbose=='False':
 	Verbose=False
 elif opts.Verbose=='True':
 	Verbose=True
-trainimage_dir = os.getcwd()+'/../media/TrainImages/'
-masterimage_dir = os.getcwd()+'/../media/MasterImages/'
-environmentimage_dir = os.getcwd()+'/../media/EnvironmentImages/'
-trainnednets_dir = os.getcwd()+'/../trained_nets/'
+packagepath = roslib.packages.get_pkg_dir('icarus_drone_server')
+if opts.TrainMode=='Real':
+	trainimage_dir = packagepath +'/media/TrainImages/'
+elif opts.TrainMode=='Simulated':
+	trainimage_dir = packagepath +'/media/SimulatedImages/'
+
+names = listdir(trainimage_dir)
+names = sorted(names)
+for i in range(len(names)):
+	print "{}. {}".format(i,names[i])
+choice = raw_input("Please Select a folder: ")
+if choice == '':
+  choice = len(names)-1
+else:
+  choice = int(choice)
+print 'Selected: {}'.format(names[choice])
+trainimage_dir = trainimage_dir + '/' + names[choice] + '/'
+masterimage_dir = packagepath +'/media/MasterImages/'
+environmentimage_dir = packagepath +'/media/EnvironmentImages/'
+trainnednets_dir = packagepath +'/trained_nets/'
 '''Global Variables'''
 RESIZEFACTOR = 0.25
 ROWSECTORS = 3
@@ -151,16 +168,23 @@ def trainnets():
 	SPLITFACTOR = 0.25
 	MINSUCCESS = 0.7
 	SAVENETS = False
-	classtypes =['TanhLayer','SoftmaxLayer','SigmoidLayer']
-	OUTCLASSs =[TanhLayer,SoftmaxLayer,SigmoidLayer]
-	HIDDENCLASSs = [TanhLayer,SoftmaxLayer,SigmoidLayer]
-        LEARNRATEs = np.linspace(.01,.09,num=10)
-	MOMENTUMs = np.linspace(.1,.9,num=10)
-	WEIGHTDECAYs = np.linspace(.1,.9,num=10)
-	HIDDENNEURONs = [(10),(5,5),(5,5,5),(5,5,5,5)]
+	classtypes = ['TanhLayer']
+	OUTCLASSs = [TanhLayer]
+	HIDDENCLASSs = [TanhLayer]
+	LEARNRATEs = [.04]
+	MOMENTUMs = [.4]
+	WEIGHTDECAYs = [.3]
+	HIDDENNEURONs = [10]
+	#classtypes =['TanhLayer','SoftmaxLayer','SigmoidLayer']
+	#OUTCLASSs =[TanhLayer,SoftmaxLayer,SigmoidLayer]
+	#HIDDENCLASSs = [TanhLayer,SoftmaxLayer,SigmoidLayer]
+        #LEARNRATEs = np.linspace(.01,.09,num=10)
+	#MOMENTUMs = np.linspace(.1,.9,num=10)
+	#WEIGHTDECAYs = np.linspace(.1,.9,num=10)
+	#HIDDENNEURONs = [(10),(5,5),(5,5,5),(5,5,5,5)]
     	IterationMax = len(classtypes)*len(OUTCLASSs)*len(HIDDENCLASSs)*len(LEARNRATEs)*len(MOMENTUMs)*len(WEIGHTDECAYs)*len(HIDDENNEURONs)
     	IterationCounter = 0
-	resultfile_path = 'results.csv'
+	resultfile_path = packagepath + '\/scripts/results.csv'
 	resultfile = open(resultfile_path,'w')
 	class_net_DS = ClassificationDataSet(class_vectors[0].shape[1],class_labels=masterimage_names)
 	for i in range(len(class_vectors)):
@@ -230,7 +254,7 @@ def trainnets():
 		for h in range(len(HIDDENCLASSs)):
 			for m in range(len(MOMENTUMs)):
 				for w in range(len(WEIGHTDECAYs)):
-					for n in range(len(HIDDENNEURONS)):
+					for n in range(len(HIDDENNEURONs)):
 						for l in range(len(LEARNRATEs)):
 						    starttime_classnet = time.time()
 						    starttime_rownet = time.time()
@@ -238,8 +262,8 @@ def trainnets():
 						    trainindex = trainindex + 1
 						    #print 'Train Count: {}'.format(trainindex)
 						    if (TrainNets == 'CLASSNET') or (TrainNets == 'ALL'):
-						        class_net = buildNetwork( class_net_TrainData.indim, HIDDENNEURONS[n], class_net_TrainData.outdim,bias=True, hiddenclass=HIDDENCLASSs[h],outclass=OUTCLASSs[o] )
-						        class_net_trainer = BackpropTrainer(class_net,dataset=class_net_TrainData,learningrate=LEARNRATES[l],momentum=MOMENTUMs[m],verbose=Verbose,weightdecay=WEIGHTDECAYs[w])
+						        class_net = buildNetwork( class_net_TrainData.indim, HIDDENNEURONs[n], class_net_TrainData.outdim,bias=True, hiddenclass=HIDDENCLASSs[h],outclass=OUTCLASSs[o] )
+						        class_net_trainer = BackpropTrainer(class_net,dataset=class_net_TrainData,learningrate=LEARNRATEs[l],momentum=MOMENTUMs[m],verbose=Verbose,weightdecay=WEIGHTDECAYs[w])
 						        if UseParallel:
 						            print 'Training Classification ANN in Parallel'
 					    
@@ -250,8 +274,8 @@ def trainnets():
 						            print 'Training Classification ANN in Sequence'
 						            trainnet('class_net',class_net,class_net_trainer,class_net_TrainData,class_net_TestData,class_vectors,class_names,masterimage_names,Verbose,trainnednets_dir)
 						    if (TrainNets == 'ROWNET') or (TrainNets == 'ALL'):
-						        row_net = buildNetwork( row_net_TrainData.indim, HIDDENNEURONS[n], row_net_TrainData.outdim, bias=True,hiddenclass=HIDDENCLASSs[h],outclass=OUTCLASSs[o] )
-						        row_net_trainer = BackpropTrainer(row_net,dataset=row_net_TrainData,learningrate=LEARNRATES[l],momentum=MOMENTUMs[m],verbose=Verbose,weightdecay=WEIGHTDECAYs[w])		
+						        row_net = buildNetwork( row_net_TrainData.indim, HIDDENNEURONs[n], row_net_TrainData.outdim, bias=True,hiddenclass=HIDDENCLASSs[h],outclass=OUTCLASSs[o] )
+						        row_net_trainer = BackpropTrainer(row_net,dataset=row_net_TrainData,learningrate=LEARNRATEs[l],momentum=MOMENTUMs[m],verbose=Verbose,weightdecay=WEIGHTDECAYs[w])		
 						        if UseParallel:
 						            print 'Training Row ANN in Parallel'
 						            job = job_server.submit(func=trainnet,args=('row_net',row_net,row_net_trainer,row_net_TrainData,row_net_TestData,loc_vectors,loc_rows,rowlabels,Verbose,trainnednets_dir),modules=
@@ -260,8 +284,8 @@ def trainnets():
 						            print 'Training Row ANN in Sequence'
 						            trainnet('row_net',row_net,row_net_trainer,row_net_TrainData,row_net_TestData,loc_vectors,loc_rows,rowlabels,Verbose,trainnednets_dir)
 						    if (TrainNets == 'COLNET') or (TrainNets == 'ALL'):
-						        col_net = buildNetwork( col_net_TrainData.indim, HIDDENNEURONS[n], col_net_TrainData.outdim, bias=True,hiddenclass=HIDDENCLASSs[h],outclass=OUTCLASSs[o] )
-						        col_net_trainer = BackpropTrainer(col_net,dataset=col_net_TrainData,learningrate=LEARNRATES[l],momentum=MOMENTUMs[m],verbose=Verbose,weightdecay=WEIGHTDECAYs[w])	
+						        col_net = buildNetwork( col_net_TrainData.indim, HIDDENNEURONs[n], col_net_TrainData.outdim, bias=True,hiddenclass=HIDDENCLASSs[h],outclass=OUTCLASSs[o] )
+						        col_net_trainer = BackpropTrainer(col_net,dataset=col_net_TrainData,learningrate=LEARNRATEs[l],momentum=MOMENTUMs[m],verbose=Verbose,weightdecay=WEIGHTDECAYs[w])	
 						        if UseParallel:
 						            print 'Training Column ANN in Parallel'
 						            job = job_server.submit(func=trainnet,args=('col_net',col_net,col_net_trainer,col_net_TrainData,col_net_TestData,loc_vectors,loc_cols,collabels,Verbose,trainnednets_dir),modules=
@@ -277,18 +301,21 @@ def trainnets():
 						    if (TrainNets == 'CLASSNET') or (TrainNets == 'ALL'):
 						        elaptime_classnet = time.time()-starttime_classnet
 						        classnet_successrate = testnet('class_net',class_net,class_net_TestData,class_vectors,class_names,masterimage_names,Verbose)
-						        tempstr = '{},{:.3f},{},{},{},{:.3f},{},{:.1f}\r\n'.format('class_net',100*classnet_successrate,classtypes[o],classtypes[h],MOMENTUMs[m],WEIGHTDECAYs[w],HIDDENNEURONS[n],elaptime_classnet)
+						        tempstr = '{},{:.3f},{},{},{},{:.3f},{},{:.1f}\r\n'.format('class_net',100*classnet_successrate,classtypes[o],classtypes[h],MOMENTUMs[m],WEIGHTDECAYs[w],HIDDENNEURONs[n],elaptime_classnet)
 						        resultfile.write(tempstr)
+							savenet('class_net',class_net)
 						    if (TrainNets == 'ROWNET') or (TrainNets == 'ALL'):
 						        elaptime_rownet = time.time()-starttime_rownet
 						        rownet_successrate = testnet('row_net',row_net,row_net_TestData,loc_vectors,loc_rows,rowlabels,Verbose)
-						        tempstr = '{},{:.3f},{},{},{},{:.3f},{},{:.1f}\r\n'.format('row_net',100*rownet_successrate,classtypes[o],classtypes[h],MOMENTUMs[m],WEIGHTDECAYs[w],HIDDENNEURONS[n],elaptime_rownet)
-						        resultfile.write(tempstr)	
+						        tempstr = '{},{:.3f},{},{},{},{:.3f},{},{:.1f}\r\n'.format('row_net',100*rownet_successrate,classtypes[o],classtypes[h],MOMENTUMs[m],WEIGHTDECAYs[w],HIDDENNEURONs[n],elaptime_rownet)
+						        resultfile.write(tempstr)
+							savenet('row_net',row_net)	
 						    if (TrainNets == 'COLNET') or (TrainNets == 'ALL'):
 						        elaptime_colnet = time.time()-starttime_colnet
 						        colnet_successrate = testnet('col_net',col_net,col_net_TestData,loc_vectors,loc_cols,collabels,Verbose)
-						        tempstr = '{},{:.3f},{},{},{},{:.3f},{},{:.1f}\r\n'.format('col_net',100*colnet_successrate,classtypes[o],classtypes[h],MOMENTUMs[m],WEIGHTDECAYs[w],HIDDENNEURONS[n],elaptime_colnet)
+						        tempstr = '{},{:.3f},{},{},{},{:.3f},{},{:.1f}\r\n'.format('col_net',100*colnet_successrate,classtypes[o],classtypes[h],MOMENTUMs[m],WEIGHTDECAYs[w],HIDDENNEURONs[n],elaptime_colnet)
 						        resultfile.write(tempstr)
+							savenet('col_net',col_net)
 						    IterationCounter = IterationCounter + 1
 						    print 'Iteration: {}/{} Completed'.format(IterationCounter,IterationMax)
 				resultfile.close()
