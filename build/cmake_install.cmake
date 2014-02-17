@@ -1,4 +1,4 @@
-# Install script for directory: /home/davidgitz/fuerte_workspace/sandbox/icarus_drone_server
+# Install script for directory: /home/dgitz/fuerte_workspace/sandbox/icarus_drone_server
 
 # Set the install prefix
 IF(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -38,7 +38,7 @@ ELSE(CMAKE_INSTALL_COMPONENT)
   SET(CMAKE_INSTALL_MANIFEST "install_manifest.txt")
 ENDIF(CMAKE_INSTALL_COMPONENT)
 
-FILE(WRITE "/home/davidgitz/fuerte_workspace/sandbox/icarus_drone_server/build/${CMAKE_INSTALL_MANIFEST}" "")
+FILE(WRITE "/home/dgitz/fuerte_workspace/sandbox/icarus_drone_server/build/${CMAKE_INSTALL_MANIFEST}" "")
 FOREACH(file ${CMAKE_INSTALL_MANIFEST_FILES})
-  FILE(APPEND "/home/davidgitz/fuerte_workspace/sandbox/icarus_drone_server/build/${CMAKE_INSTALL_MANIFEST}" "${file}\n")
+  FILE(APPEND "/home/dgitz/fuerte_workspace/sandbox/icarus_drone_server/build/${CMAKE_INSTALL_MANIFEST}" "${file}\n")
 ENDFOREACH(file)
