@@ -5,85 +5,75 @@ import math
 import sys
 import time
 import numpy as np
-
+import os
+import pdb
 from optparse import OptionParser
 parser = OptionParser("test_imagepreprocess.py [options]")
 
 #parser.add_option("--targetmode",dest="targetmode",default="Acquire",help="Acquire,Train,Test,Execute")
 
-
+image_paths = []
 (opts,args) = parser.parse_args()
-#
+mainpath = os.getcwd()
+trainimage_dir = mainpath +'..\\..\\media\\RealImages\\'
+folders = os.listdir(trainimage_dir)
+for f in range(len(folders)):
+	mypath = trainimage_dir + '\\' + folders[f] + '\\'
+	
+	myfiles = os.listdir(mypath)
+	for i in range(len(myfiles)):
+		image_paths.append(trainimage_dir + '\\' + folders[f] + '\\' + myfiles[i])
+
 def mainloop():
 	time.sleep(3)
 	initvariables()
-	
-	while False: #Dumb
-		lasttime = curtime
-		curtime = time.time()
-		elapsedtime = (curtime-lasttime)
-		boottime = int((curtime-starttime)*1000)
-		#sprint boottime
-		updaterate = 1/elapsedtime #Hz
-		#print updaterate
-		dt = datetime.datetime.now()
-	
-		
-		
+	cv2.namedWindow("Original Image",1)
+	cv2.namedWindow("Processed Image",1)
+	for i in range(len(image_paths)):
+	    #lasttime = curtime
+		#curtime = time.time()
+		orig_image = cv2.imread(image_paths[i])
+		time.sleep(.1)
+		new_image = preprocess(orig_image)
+		cv2.imshow("Original Image",orig_image)
+		cv2.waitKey(1)
+		cv2.imshow("Processed Image",new_image)
+		cv2.waitKey(1)
+		print 'Finished {}/{} Images'.format(i+1,len(image_paths))
+		#elapsedtime = (curtime-lasttime)
+
+
+
+
 
 
 
 def initvariables():
-	global Current_Yaw_rad
-	global Current_Pitch_rad
-	global Current_Roll_rad
-	global fc_badpacket_counter
-	global startime
-	global imagenum
-	global depth_image
-	global color_image
-	global mouse_x
-	global mouse_y
-	global high
-	global DEPTH_CAMERA_HEIGHT
-	global DEPTH_CAMERA_WIDTH
-	global DEPTH_IMAGE_METERS_TO_GRAY
-	global num_condensed_array_rows
-	global num_condensed_array_cols				
-	global max_dist_sector_in
-	global min_dist_sector_in
-	global lasttime_depth
-	global mask_image
-	lasttime_depth = 0
-	imagenum = 0
-	num_condensed_array_rows = 3
-	num_condensed_array_cols = 3
-	max_dist_sector_in = np.zeros(num_condensed_array_rows*num_condensed_array_cols)
-	min_dist_sector_in = np.zeros(num_condensed_array_rows*num_condensed_array_cols)
-	mask_image = np.ones((480,640))
-	mask_image[375:480,0:640] = np.NaN
-	mask_image[250:375,150:375] = np.NaN
-	DEPTH_IMAGE_METERS_TO_GRAY = 1.0/4.0
-	DEPTH_CAMERA_HEIGHT = -1
-	DEPTH_CAMERA_WIDTH = -1
-	depth_image_max_intensity = 1
-	depth_image_scale = 24
-	high = 0
-	mouse_x = 0
-	mouse_y = 0
-	imagenum = 0
-	starttime = 0
-	timelastsend = 0
-	Current_Yaw_rad = 0.0
-	Current_Pitch_rad = 0.0
-	Current_Roll_rad = 0.0
-	fc_badpacket_counter = 0
-	WaypointCount = 0	
-	
-def preprocess(im):
-    dumb = 1
+	dumb = 1
 
-		
+def preprocess(orig_image):
+    #new_image = orig_image
+	black_filter = np.uint8([[[0,0,255]]])
+	contour_image = np.uint8([[[0,0,255]]])
+	im = np.uint8([[[0,0,0]]])
+	new_image = cv2.cvtColor(orig_image,cv2.COLOR_BGR2HSV)
+	new_image = new_image * black_filter
+	new_image = cv2.cvtColor(new_image,cv2.COLOR_BGR2GRAY)
+	(thresh,new_image) = cv2.threshold(new_image,20,255,cv2.THRESH_BINARY)
+	if 1:
+		contours,hierarchy = cv2.findContours(new_image,1,2)
+		cnt = contours[0]
+		rect = cv2.minAreaRect(cnt)
+		box = cv2.cv.BoxPoints(rect)
+		box = np.int0(box)
+		cv2.drawContours(new_image,[box],0,(0,0,255),2)
+			
+	cv2.imshow("Original Image",orig_image)
+	cv2.waitKey(1)
+	cv2.imshow("Processed Image",new_image)
+	cv2.waitKey(1)
+	return new_image
+
 if __name__ == '__main__':
         mainloop()
 
