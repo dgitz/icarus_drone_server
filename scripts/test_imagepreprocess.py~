@@ -59,6 +59,8 @@ def mainloop():
 		#elapsedtime = (curtime-lasttime)
 		cv2.imshow("Original Image",orig_image)
 		cv2.waitKey(1)
+		cv2.imshow("Thresholded Image",thresh_image)
+		cv2.waitKey(1)
 		cv2.imshow("Processed Image",new_image)
 		cv2.waitKey(1)
 

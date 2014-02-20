@@ -3,6 +3,7 @@
 import roslib
 import os
 import time
+import imp
 import random
 import pybrain
 import pdb
@@ -42,22 +43,24 @@ if opts.Verbose=='False':
 elif opts.Verbose=='True':
 	Verbose=True
 packagepath = roslib.packages.get_pkg_dir('icarus_drone_server')
+helperpath = packagepath + '/src/icarus_helper.py'
+icarus_helper = imp.load_source('icarus_helper',helperpath)
 if opts.TrainMode=='Real':
-	trainimage_dir = packagepath +'/media/TrainImages/'
+	trainimage_dir = packagepath +'/media/RealImages/'
 elif opts.TrainMode=='Simulated':
 	trainimage_dir = packagepath +'/media/SimulatedImages/'
 
-names = listdir(trainimage_dir)
-names = sorted(names)
-for i in range(len(names)):
-	print "{}. {}".format(i,names[i])
-choice = raw_input("Please Select a folder: ")
-if choice == '':
-  choice = len(names)-1
-else:
-  choice = int(choice)
-print 'Selected: {}'.format(names[choice])
-trainimage_dir = trainimage_dir + '/' + names[choice] + '/'
+	names = listdir(trainimage_dir)
+	names = sorted(names)
+	for i in range(len(names)):
+		print "{}. {}".format(i,names[i])
+	choice = raw_input("Please Select a folder: ")
+	if choice == '':
+	  choice = len(names)-1
+	else:
+	  choice = int(choice)
+	print 'Selected: {}'.format(names[choice])
+	trainimage_dir = trainimage_dir + '/' + names[choice] + '/'
 masterimage_dir = packagepath +'/media/MasterImages/'
 environmentimage_dir = packagepath +'/media/EnvironmentImages/'
 trainnednets_dir = packagepath +'/trained_nets/'
@@ -75,57 +78,60 @@ for i in range(len(masterimage_names)):
 	masterimage_paths[i] = masterimage_dir + masterimage_names[i]
 	masterimage_names[i] = masterimage_names[i][0:masterimage_names[i].find('.')]
 masterimage_names.append('None')
+tempfolder_classes = os.listdir(trainimage_dir)
+trainitems = []
 
-allimage_names = [f for f in os.listdir(trainimage_dir) if os.path.isfile(os.path.join(trainimage_dir,f))]
-allimage_paths = ['']*len(allimage_names)
+for f in range(len(tempfolder_classes)):
+	temppath = trainimage_dir + tempfolder_classes[f] + '/'
+	tempfiles = os.listdir(temppath)
+	for t in range(len(tempfiles)):
+		myclass = tempfolder_classes[f]
+		mypath = temppath + tempfiles[t]
+		myindex = 0#int(tempfiles[t][5:9])
+		tempstr = tempfiles[t][tempfiles[t].find('_')+1:]
+		mycentery = int(tempstr[0:tempstr.find('_')])
+		mycenterx = int(tempstr[tempstr.find('_')+1:tempstr.find('.')])
+		myorigimage = cv2.imread(mypath)
+		myprocimage = icarus_helper.preprocess(myorigimage)		
+		trainitems.append(icarus_helper.train_item(trainclass=myclass,trainindex=0,trainpath=mypath,traincenterx=mycenterx,traincentery=mycentery,trainorigimage=myorigimage,trainprocimage=myprocimage))
+		
+tempfiles = os.listdir(environmentimage_dir)
+
+for t in range(len(tempfiles)):
+	myclass = 'None'
+	mypath = environmentimage_dir + tempfiles[t]
+	myindex = 0
+	mycentery = 0
+	mycenterx = 0
+	myorigimage = cv2.imread(mypath)
+	myprocimage = icarus_helper.preprocess(myorigimage)
+	trainitems.append(icarus_helper.train_item(trainclass=myclass,trainindex=0,trainpath=mypath,traincenterx=mycenterx,traincentery=mycentery,trainorigimage=myorigimage,trainprocimage=myprocimage))
+
 class_data = []
-loc_data = []
-environmentimage_names = [f for f in listdir(environmentimage_dir) if isfile(join(environmentimage_dir,f))]
-environmentimage_paths = [''] * len(environmentimage_names)
-for i in range(len(environmentimage_names)):
-	environmentimage_paths[i] = environmentimage_dir + environmentimage_names[i]
-
-for i in range(len(allimage_names)):
-	allimage_paths[i] = trainimage_dir + allimage_names[i]
-	tempstr = allimage_names[i]
-	allimage_names[i] = allimage_names[i][0:allimage_names[i].find('_')]
-	image = cv2.imread(allimage_paths[i],cv2.CV_LOAD_IMAGE_GRAYSCALE)
-	image = cv2.resize(image,None,fx=RESIZEFACTOR,fy=RESIZEFACTOR)
-	height,width = image.shape
-	tempstr = tempstr[tempstr.find('_')+1:]
-	tempstr = tempstr[tempstr.find('_')+1:]
-
-	y = int(tempstr[0:tempstr.find('_')])
-	x = int(tempstr[(tempstr.find('_')+1):tempstr.find('.')])
-	row = math.ceil(ROWSECTORS*float(y)/float(height*2))
-	col = math.ceil(COLSECTORS*float(x)/float(width*2))
-	vector = image.reshape([1,height*width]).astype('int')
-	class_data.append([allimage_names[i],vector,image])
+for i in range(len(trainitems)):
+	height,width = trainitems[i].trainprocimage.shape
+	row = math.ceil(ROWSECTORS*float(trainitems[i].traincentery)/float(height*2))
+	col = math.ceil(COLSECTORS*float(trainitems[i].traincenterx)/float(width*2))
+	vector = trainitems[i].trainprocimage.reshape([1,height*width]).astype('int')
+	class_data.append([trainitems[i].trainclass,vector,trainitems[i].trainprocimage])
 	
-	loc_data.append([row,col,vector,image])
-	
-for j in range(len(environmentimage_paths)):
-	image = cv2.imread(environmentimage_paths[j],cv2.CV_LOAD_IMAGE_GRAYSCALE)
-	image = cv2.resize(image,None,fx=RESIZEFACTOR,fy=RESIZEFACTOR)
-	height,width = image.shape
-	vector = image.reshape([1,height*width]).astype('int')
-	class_data.append([masterimage_names[-1],vector,image])
 random.shuffle(class_data)
-random.shuffle(loc_data)
+#random.shuffle(loc_data)
 class_names = []
 class_vectors = []
 loc_vectors = []
-loc_rows = []
-loc_cols = []
+#loc_rows = []
+#loc_cols = []
+
 for d in range(len(class_data)):
 	class_names.append(class_data[d][0])
 	class_vectors.append(class_data[d][1])
-for d in range(len(loc_data)):
+'''for d in range(len(loc_data)):
 	
 	loc_rows.append('Row{}'.format(int(loc_data[d][0])))
 	loc_cols.append('Column{}'.format(int(loc_data[d][1])))
 	loc_vectors.append(loc_data[d][2])
-
+'''
 def savenet(name,net):
 	filename = name +'_' + time.strftime("%Y_%m_%d_%H_%M_%S")
 	writepath = trainnednets_dir + filename
@@ -140,8 +146,8 @@ def testnet(name,net,testdata,vectors,answers,labels,verbose):
 	successrate = 0.0
 	for i in range(len(vectors)):
 		out = net.activate(tuple(vectors[i].reshape(1,-1)[0]))
-		#if verbose:
-		#	print "Calculated Class: {} Actual Class: {}".format(labels[out.argmax()],answers[i])
+		if verbose:
+			print "Calculated Class: {} Actual Class: {}".format(labels[out.argmax()],answers[i])
 		if labels[out.argmax()] == answers[i]:
 			successrate = successrate + 1.0
 	successrate = successrate/len(vectors)
@@ -167,21 +173,20 @@ def trainnets():
 	'''Function Variables'''
 	SPLITFACTOR = 0.25
 	MINSUCCESS = 0.7
-	SAVENETS = False
-	classtypes = ['TanhLayer']
-	OUTCLASSs = [TanhLayer]
-	HIDDENCLASSs = [TanhLayer]
-	LEARNRATEs = [.04]
-	MOMENTUMs = [.4]
-	WEIGHTDECAYs = [.3]
-	HIDDENNEURONs = [10]
-	#classtypes =['TanhLayer','SoftmaxLayer','SigmoidLayer']
-	#OUTCLASSs =[TanhLayer,SoftmaxLayer,SigmoidLayer]
-	#HIDDENCLASSs = [TanhLayer,SoftmaxLayer,SigmoidLayer]
-        #LEARNRATEs = np.linspace(.01,.09,num=10)
-	#MOMENTUMs = np.linspace(.1,.9,num=10)
-	#WEIGHTDECAYs = np.linspace(.1,.9,num=10)
-	#HIDDENNEURONs = [(10),(5,5),(5,5,5),(5,5,5,5)]
+	#classtypes = ['TanhLayer']
+	#OUTCLASSs = [TanhLayer]
+	#HIDDENCLASSs = [TanhLayer]
+	#LEARNRATEs = [.04]
+	#MOMENTUMs = [.4]
+	#WEIGHTDECAYs = [.3]
+	#HIDDENNEURONs = [10]
+	classtypes =['SigmoidLayer']
+	OUTCLASSs =[SigmoidLayer]
+	HIDDENCLASSs = [SigmoidLayer]
+        LEARNRATEs = [.05]#np.linspace(.01,.09,num=10)
+	MOMENTUMs = [.5]#np.linspace(.1,.9,num=10)
+	WEIGHTDECAYs = [.5]#np.linspace(.1,.9,num=10)
+	HIDDENNEURONs = [(10),(5,5),(5,5,5),(5,5,5,5)]
     	IterationMax = len(classtypes)*len(OUTCLASSs)*len(HIDDENCLASSs)*len(LEARNRATEs)*len(MOMENTUMs)*len(WEIGHTDECAYs)*len(HIDDENNEURONs)
     	IterationCounter = 0
 	resultfile_path = packagepath + '/scripts/results.csv'
@@ -204,7 +209,7 @@ def trainnets():
 		pdb.set_trace()
 	
 	
-	rowlabels = []
+	'''rowlabels = []
 	for i in range(1,ROWSECTORS+1):
 		rowlabels.append('Row{}'.format(i))
 	row_net_DS = ClassificationDataSet(loc_vectors[0].shape[1],class_labels=rowlabels)
@@ -240,6 +245,7 @@ def trainnets():
 	except IndexError:
 		print 'Possibly not all Targets present in Training Data.'
 		pdb.set_trace()
+	'''	
 	jobs = []
 	netstrained = False
 	classnet_successrate = 0.0
