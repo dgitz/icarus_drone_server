@@ -46,5 +46,5 @@ while(~trainingcomplete)
     end
 end
 finishtime = toc(t1);
-fprintf(ResultFileID,['classnet,' NETNAME ',' num2str(finishtime) ',' num2str(loop(l).accuracy) ',' num2str(train_limit) ',' num2str(l) ',' Script '\r\n']);
+fprintf(ResultFileID,['classnet,' NETNAME ',' TRAINFCN_CLASS ',' num2str(finishtime) ',' num2str(loop(l).accuracy) ',' num2str(train_limit) ',' num2str(l) ',' Script ',' getComputerName '\r\n']);
 disp(['total training time: ' num2str(finishtime)])

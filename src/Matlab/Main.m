@@ -3,10 +3,16 @@
 close all
 clear variables
 clc
+SHUFFLE = true;
+Script = 'Script3';
+%SCALE_FACTOR = .5;
+LoadTrainingSamples;
+%pack
+%keep trainitems Script SHUFFLE TargetTestMatrix TargetTrainMatrix TrainMatrix TestMatrix
 main_run = true;
 
 NetworkStatus = false;
-SCALE_FACTOR = .5;
+
 TRAIN_LIMIT_MAX = 92;
 SUB_GRIDS = 9; %SUB_GRIDS^.5 SHOULD BE AN INTEGER
 train_limit = TRAIN_LIMIT_MAX;
@@ -15,27 +21,31 @@ TRAINFCN_CLASS = 'trainscg';
 saveimages = false;
 SHOW_IMAGES = true;
 MAKE_MOVIE = false;
-Script = 'Script2';
+
 if ~SHOW_IMAGES
     MAKE_MOVIE = false;
 end
 RATIO = .75;
 PAUSES = false;
-SHUFFLE = true;
-ResultFileID = fopen('Results.csv','at');
+
+ResultFileID = fopen([pwd '/Results/ ' datestr(now,'mm-dd-yy_HH-MM-SS') '.csv'],'wt');
 trainfcns = {'traingd','trainscg','traincgf','traincgp','traingda','traingdm','traingdx','trainoss'}
 while(main_run)
     
     SampleName = 'IARC';
-    choice = input('What would you like to do? \n[P]ick Pixel Targets \n[L]oad Network \nTrain [C]lassification Network \nTrain [O]bject Localizing Network \nA[U]tomated Training \n[A]cquire Images \n or [E]xit. ','s');
+    %choice = input('What would you like to do? \n[P]ick Pixel Targets \n[L]oad Network \nTrain [C]lassification Network \nTrain [O]bject Localizing Network \nA[U]tomated Training \n[A]cquire Images \n or [E]xit. ','s');
+    choice = input('What would you like to do? \n[T]est Image Processing \nTrain [C]lassification Network \nA[U]tomated Training \nor [E]xit. ','s');
+    
     switch choice
+        case 'T'
+            TestImagePreProcess
+            NetworkStatus = false;
         case 'P'
             PickTargetPixels;
         case 'E'
             main_run = false;
             break;
         case 'L'
-            LoadTrainingSamples;
             choice = input('[C]lassifier Network or [O]bject Localizing Networks? ','s');
             switch choice
                 case 'C'
@@ -50,15 +60,12 @@ while(main_run)
             main_run = false;
             break;
         case 'C'
-            LoadTrainingSamples;
             TrainClassNetwork;
             SaveClassNetwork;
             NetworkStatus = true;
         case 'O'
-            LoadTrainingSamples;
             TrainObjectNetwork;
         case 'U'
-            LoadTrainingSamples;
             choice = input('[C]lassifier Network or [O]bject Localizing Networks? ','s');
             for i = 1:length(trainfcns)
                 train_limit = TRAIN_LIMIT_MAX;

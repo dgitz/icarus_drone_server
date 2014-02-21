@@ -1,11 +1,6 @@
 %TestImagePreProcess
-close all
-clear variables
-clc
-Script = 'Script2';
 SHUFFLE = false;
-LoadTrainingSamples;
-keep trainitems
+
 skip = floor(length(trainitems)/100);
 for i = 1:length(trainitems)
     if mod(i,skip) == 0
