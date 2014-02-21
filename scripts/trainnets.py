@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-import roslib
+#import roslib
 import os
 import time
 import random
@@ -41,7 +41,8 @@ if opts.Verbose=='False':
 	Verbose=False
 elif opts.Verbose=='True':
 	Verbose=True
-packagepath = roslib.packages.get_pkg_dir('icarus_drone_server')
+packagepath = os.getcwd()
+pdb.set_trace()
 if opts.TrainMode=='Real':
 	trainimage_dir = packagepath +'/media/TrainImages/'
 elif opts.TrainMode=='Simulated':
