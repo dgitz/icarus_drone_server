@@ -220,7 +220,7 @@ def mainloop():
 		updaterate = 1/elapsedtime #Hz
 		#print updaterate
 		dt = datetime.datetime.now()
-		print "{},{},{},{},{},{}".format(pose_x,pose_y,pose_z,pose_roll,pose_pitch,pose_yaw)
+		print "x: {}, y: {}, z: {}, r: {}, p: {}, y: {}".format(pose_x,pose_y,pose_z,pose_roll,pose_pitch,pose_yaw)
 		
 		
 
