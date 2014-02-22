@@ -1,4 +1,7 @@
 FILE(REMOVE_RECURSE
+  "../msg_gen"
+  "../src/icarus_drone_server/msg"
+  "../msg_gen"
   "CMakeFiles/test-future"
 )
 

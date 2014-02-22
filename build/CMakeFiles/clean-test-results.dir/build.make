@@ -32,10 +32,10 @@ CMAKE_COMMAND = /usr/bin/cmake
 RM = /usr/bin/cmake -E remove -f
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/dgitz/fuerte_workspace/sandbox/icarus_drone_server
+CMAKE_SOURCE_DIR = /home/davidgitz/fuerte_workspace/sandbox/icarus_drone_server
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/dgitz/fuerte_workspace/sandbox/icarus_drone_server/build
+CMAKE_BINARY_DIR = /home/davidgitz/fuerte_workspace/sandbox/icarus_drone_server/build
 
 # Utility rule file for clean-test-results.
 
@@ -43,7 +43,7 @@ CMAKE_BINARY_DIR = /home/dgitz/fuerte_workspace/sandbox/icarus_drone_server/buil
 include CMakeFiles/clean-test-results.dir/progress.make
 
 CMakeFiles/clean-test-results:
-	if ! rm -rf /home/dgitz/.ros/test_results/icarus_drone_server; then echo WARNING:\ failed\ to\ remove\ test-results\ directory ; fi
+	if ! rm -rf /home/davidgitz/.ros/test_results/icarus_drone_server; then echo WARNING:\ failed\ to\ remove\ test-results\ directory ; fi
 
 clean-test-results: CMakeFiles/clean-test-results
 clean-test-results: CMakeFiles/clean-test-results.dir/build.make
@@ -58,6 +58,6 @@ CMakeFiles/clean-test-results.dir/clean:
 .PHONY : CMakeFiles/clean-test-results.dir/clean
 
 CMakeFiles/clean-test-results.dir/depend:
-	cd /home/dgitz/fuerte_workspace/sandbox/icarus_drone_server/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/dgitz/fuerte_workspace/sandbox/icarus_drone_server /home/dgitz/fuerte_workspace/sandbox/icarus_drone_server /home/dgitz/fuerte_workspace/sandbox/icarus_drone_server/build /home/dgitz/fuerte_workspace/sandbox/icarus_drone_server/build /home/dgitz/fuerte_workspace/sandbox/icarus_drone_server/build/CMakeFiles/clean-test-results.dir/DependInfo.cmake --color=$(COLOR)
+	cd /home/davidgitz/fuerte_workspace/sandbox/icarus_drone_server/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/davidgitz/fuerte_workspace/sandbox/icarus_drone_server /home/davidgitz/fuerte_workspace/sandbox/icarus_drone_server /home/davidgitz/fuerte_workspace/sandbox/icarus_drone_server/build /home/davidgitz/fuerte_workspace/sandbox/icarus_drone_server/build /home/davidgitz/fuerte_workspace/sandbox/icarus_drone_server/build/CMakeFiles/clean-test-results.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : CMakeFiles/clean-test-results.dir/depend
 

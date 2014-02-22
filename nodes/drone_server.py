@@ -5,6 +5,8 @@ packagepath = roslib.packages.get_pkg_dir('icarus_drone_server')
 import rospy
 from std_msgs.msg import String, Header
 from sensor_msgs.msg import NavSatFix, NavSatStatus, Imu,CameraInfo
+from icarus_drone_server.msg import *
+import pdb
 import math
 import sys
 import os
@@ -19,7 +21,6 @@ import socket
 import errno
 import serial
 import shutil
-import pdb
 #import rgbdslam.msg
 
 from collections import namedtuple
@@ -81,7 +82,7 @@ if targetmode == "Acquire":
 			shutil.rmtree(target_acquire_classdir)
 			os.makedirs(target_acquire_classdir,0777)
 		
-	
+
 	
 
 
@@ -101,12 +102,27 @@ my_MissionItems = []
 class ros_service:
 	
 	def __init__(self):
-		#pdb.set_trace()
 		if targetmode == "Acquire":
 			cv2.namedWindow("RGB",1)
 			self.bridge = CvBridge()
 			self.image_sub = rospy.Subscriber("/ardrone/front/image_raw",Image,self.callbackCameraAcquire)
 			print 'Starting Image Acquisition'
+		elif targetmode == "Execute":
+			self.poseestimate_sub = rospy.Subscriber("/ardrone/predictedPose",filter_state,self.cb_pose_estimate)
+	def cb_pose_estimate(self,data):
+		global pose_x
+		global pose_y
+		global pose_z
+		global pose_roll
+		global pose_yaw
+		global pose_pitch
+		pose_roll = data.roll
+		pose_pitch = data.pitch
+		pose_yaw = data.yaw
+		pose_x = data.x
+		pose_y = data.y
+		pose_z = data.z
+		
 	def callbackCameraAcquire(self,data):
 		global imagenum
 		try:
@@ -129,7 +145,6 @@ class ros_service:
 			print e
 	
 def mainloop():
-	time.sleep(3)
 	initvariables()
 	global WaypointCount
 	global Current_Pitch_rad
@@ -140,6 +155,12 @@ def mainloop():
 	global Initial_Yaw_rad
 	global my_MissionItems
 	global imagenum
+	global pose_x
+	global pose_y
+	global pose_z
+	global pose_roll
+	global pose_pitch
+	global pose_yaw
 	my_MissionItems = []
 	#device_gcs.display()
 	first_attitude_packet = True
@@ -172,8 +193,8 @@ def mainloop():
 	curtime = starttime
 	user_command = "q"
 	#device_mc.changemode(mavlink.MAV_MODE_PREFLIGHT)		
-	print "Waiting 30 seconds..."
-	rospy.sleep(30)
+	print "Waiting 3 seconds..."
+	rospy.sleep(3)
 	#device_mc.changemode(mavlink.MAV_MODE_MANUAL_DISARMED)	
 	
         
@@ -199,7 +220,7 @@ def mainloop():
 		updaterate = 1/elapsedtime #Hz
 		#print updaterate
 		dt = datetime.datetime.now()
-	
+		print "{},{},{},{},{},{}".format(pose_x,pose_y,pose_z,pose_roll,pose_pitch,pose_yaw)
 		
 		
 
@@ -226,6 +247,18 @@ def initvariables():
 	global min_dist_sector_in
 	global lasttime_depth
 	global mask_image
+	global pose_x
+	global pose_y
+	global pose_z
+	global pose_roll
+	global pose_pitch
+	global pose_yaw
+	pose_x = 0
+	pose_y = 0
+	pose_z = 0
+	pose_roll = 0
+	pose_pitch = 0
+	pose_yaw = 0
 	lasttime_depth = 0
 	imagenum = 0
 	num_condensed_array_rows = 3
