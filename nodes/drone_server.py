@@ -22,9 +22,10 @@ import errno
 import serial
 import shutil
 import socket
+import numpy as np
 
 matlabserver_ip = '127.0.0.1'
-matlabserver_port = 5005
+matlabserver_port = 9090
 
 #import rgbdslam.msg
 
@@ -112,8 +113,17 @@ class ros_service:
 			self.bridge = CvBridge()
 			self.image_sub = rospy.Subscriber("/ardrone/front/image_raw",Image,self.callbackCameraAcquire)
 			print 'Starting Image Acquisition'
-		elif targetmode == "Execute":
+		elif targetmode == "Execute":	
+			self.bridge = CvBridge()
 			self.poseestimate_sub = rospy.Subscriber("/ardrone/predictedPose",filter_state,self.cb_pose_estimate)
+			self.frontimg_sub = rospy.Subscriber("/ardrone/front/image_raw",Image,self.cb_newfront_img)
+	def cb_newfront_img(self,data):
+		global front_image_vector
+		
+		color_im = self.bridge.imgmsg_to_cv(data)
+		color_image = np.array(color_im)
+		height,width,depth = np.shape(color_image)
+		front_image_vector = color_image.reshape([1,height*width*depth]).astype('int')
 	def cb_pose_estimate(self,data):
 		global pose_x
 		global pose_y
@@ -166,6 +176,7 @@ def mainloop():
 	global pose_roll
 	global pose_pitch
 	global pose_yaw
+	global front_image_vector
 	my_MissionItems = []
 	#device_gcs.display()
 	first_attitude_packet = True
@@ -208,7 +219,7 @@ def mainloop():
 	#rospy.sleep(5) #Wait 15 seconds to allow all devices to powerup
 	
 	#device_mc.changemode(mavlink.MAV_MODE_MANUAL_DISARMED)
-	if targetmode =='Test':
+	if targetmode =='Execute':
 		s = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
 		
 
@@ -229,9 +240,13 @@ def mainloop():
 		#print updaterate
 		dt = datetime.datetime.now()
 		#print "x: {}, y: {}, z: {}, r: {}, p: {}, y: {}".format(pose_x,pose_y,pose_z,pose_roll,pose_pitch,pose_yaw)
+		if targetmode == 'Execute':
+			print 'sending image {}'.format(np.size(front_image_vector))
+			s.sendto("{}\r\n".format(front_image_vector),(matlabserver_ip,matlabserver_port))
+			time.sleep(1)
 		if targetmode=='Test':
 			print "Hello"
-			s.sendto("HELLO WORLD",(matlabserver_ip,matlabserver_port))
+			s.sendto("HELLO WORLD*\r\n",(matlabserver_ip,matlabserver_port))
 			time.sleep(1)
 			
 		
@@ -266,6 +281,8 @@ def initvariables():
 	global pose_roll
 	global pose_pitch
 	global pose_yaw
+	global front_image_vector
+	front_image_vector = []
 	pose_x = 0
 	pose_y = 0
 	pose_z = 0
