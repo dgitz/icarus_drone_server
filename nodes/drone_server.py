@@ -21,6 +21,11 @@ import socket
 import errno
 import serial
 import shutil
+import socket
+
+matlabserver_ip = '127.0.0.1'
+matlabserver_port = 5005
+
 #import rgbdslam.msg
 
 from collections import namedtuple
@@ -203,6 +208,9 @@ def mainloop():
 	#rospy.sleep(5) #Wait 15 seconds to allow all devices to powerup
 	
 	#device_mc.changemode(mavlink.MAV_MODE_MANUAL_DISARMED)
+	if targetmode =='Test':
+		s = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
+		
 
 	while not rospy.is_shutdown():
 		#time.sleep(1)
@@ -220,7 +228,12 @@ def mainloop():
 		updaterate = 1/elapsedtime #Hz
 		#print updaterate
 		dt = datetime.datetime.now()
-		print "x: {}, y: {}, z: {}, r: {}, p: {}, y: {}".format(pose_x,pose_y,pose_z,pose_roll,pose_pitch,pose_yaw)
+		#print "x: {}, y: {}, z: {}, r: {}, p: {}, y: {}".format(pose_x,pose_y,pose_z,pose_roll,pose_pitch,pose_yaw)
+		if targetmode=='Test':
+			print "Hello"
+			s.sendto("HELLO WORLD",(matlabserver_ip,matlabserver_port))
+			time.sleep(1)
+			
 		
 		
 
