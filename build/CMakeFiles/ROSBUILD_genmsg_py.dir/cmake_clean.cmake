@@ -4,6 +4,7 @@ FILE(REMOVE_RECURSE
   "../msg_gen"
   "CMakeFiles/ROSBUILD_genmsg_py"
   "../src/icarus_drone_server/msg/__init__.py"
+  "../src/icarus_drone_server/msg/_Num.py"
   "../src/icarus_drone_server/msg/_filter_state.py"
 )
 
