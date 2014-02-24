@@ -23,9 +23,15 @@ import serial
 import shutil
 import socket
 import numpy as np
+np.set_printoptions(threshold=np.nan)
 
-matlabserver_ip = '127.0.0.1'
-matlabserver_port = 9090
+xmitmode = 'TCP'
+if xmitmode == 'UDP':
+	matlabserver_ip = '192.168.0.105'
+	matlabserver_port = 9090
+elif xmitmode == 'TCP':
+	matlabserver_ip = '192.168.0.105'
+	matlabserver_port = 5005
 
 #import rgbdslam.msg
 
@@ -220,7 +226,11 @@ def mainloop():
 	
 	#device_mc.changemode(mavlink.MAV_MODE_MANUAL_DISARMED)
 	if targetmode =='Execute':
-		s = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
+		if xmitmode == 'UDP':
+			s = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
+		elif xmitmode == 'TCP':
+			s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+			s.connect((matlabserver_ip,matlabserver_port))
 		
 
 	while not rospy.is_shutdown():
@@ -242,11 +252,19 @@ def mainloop():
 		#print "x: {}, y: {}, z: {}, r: {}, p: {}, y: {}".format(pose_x,pose_y,pose_z,pose_roll,pose_pitch,pose_yaw)
 		if targetmode == 'Execute':
 			print 'sending image {}'.format(np.size(front_image_vector))
-			s.sendto("{}\r\n".format(front_image_vector),(matlabserver_ip,matlabserver_port))
+			if xmitmode == 'UDP':
+				s.sendto("{}\r\n".format(front_image_vector),(matlabserver_ip,matlabserver_port))
+			elif xmitmode == 'TCP':
+				msg = 'CAM,FV{}*'.format(front_image_vector)
+				pdb.set_trace()
+				s.sendall(msg)
 			time.sleep(1)
 		if targetmode=='Test':
 			print "Hello"
-			s.sendto("HELLO WORLD*\r\n",(matlabserver_ip,matlabserver_port))
+			if xmitmode == 'UDP':
+				s.sendto("HELLO WORLD*\r\n",(matlabserver_ip,matlabserver_port))
+			elif xmitmode == 'TCP':
+				bytes = s.sendall('{}*'.format(range(691200)))
 			time.sleep(1)
 			
 		
