@@ -30,10 +30,12 @@ if xmitmode == 'UDP':
 	matlabserver_ip = '192.168.0.105'
 	matlabserver_port = 9090
 elif xmitmode == 'TCP':
-	matlabserver_ip = '192.168.0.105'
+	matlabserver_ip = '192.168.0.3'
 	matlabserver_port = 5005
 
 #import rgbdslam.msg
+
+CONFIDENCE_LIMIT = 75
 
 from collections import namedtuple
 from pprint import pprint
@@ -95,7 +97,7 @@ if targetmode == "Acquire":
 			os.makedirs(target_acquire_classdir,0777)
 		
 if targetmode =='Execute':
-	image_buffer = '/media/icarusshare/'
+	image_buffer = '/home/dgitz/icarus_share/ImagesToProcess/'
 	matlabserver_socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
 	matlabserver_socket.connect((matlabserver_ip,matlabserver_port))
 		
@@ -128,11 +130,22 @@ class ros_service:
 			self.poseestimate_sub = rospy.Subscriber("/ardrone/predictedPose",filter_state,self.cb_pose_estimate)
 			self.frontimg_sub = rospy.Subscriber("/ardrone/front/image_raw",Image,self.cb_newfront_img)
 	def cb_newfront_img(self,data):
-		pdb.set_trace()
+		global imagenum
+		'''global bufferdelay
+		count = len(os.listdir(image_buffer))
+		if count > 5: 
+			bufferdelay = bufferdelay * 1.1
+		elif count < 3:
+			bufferdelay = bufferdelay * .9
+		print bufferdelay'''
+		imagenum = imagenum + 1
 		color_im = self.bridge.imgmsg_to_cv(data)
 		color_image = np.array(color_im)
-		filename = '{}dumb.png'.format(image_buffer)
-		cv2.imwrite(filename,color_image)
+		tempstr = '{}Image{:04d}.png'.format(image_buffer,imagenum)
+		cv2.imwrite(tempstr,color_image)
+		if imagenum > 1000:
+			imagenum = 0
+		time.sleep(.65) #Time delay for Buffer, too short (like 0) and buffer will fill up way too fast and will bog down matlab_server.  .65 Seconds seems to be good
 	def cb_pose_estimate(self,data):
 		global pose_x
 		global pose_y
@@ -167,6 +180,7 @@ class ros_service:
 				
 		except CvBridgeError,e:
 			print e
+
 	
 def mainloop():
 	initvariables()
@@ -185,7 +199,9 @@ def mainloop():
 	global pose_roll
 	global pose_pitch
 	global pose_yaw
-	global front_image_vector
+	global target_x
+	global target_y
+	global target_class
 	my_MissionItems = []
 	#device_gcs.display()
 	first_attitude_packet = True
@@ -247,14 +263,28 @@ def mainloop():
 		#print updaterate
 		dt = datetime.datetime.now()
 		#print "x: {}, y: {}, z: {}, r: {}, p: {}, y: {}".format(pose_x,pose_y,pose_z,pose_roll,pose_pitch,pose_yaw)
-		if targetmode=='Test':
-			time.sleep(1)
+
+		msg = matlabserver_socket.recv(30)
+		icarus_msghandler(msg)
+		print 'Recognized Class: {}'.format(target_class)
 			
 		
 		
 
-
-
+def icarus_msghandler(mymsg):
+	global target_x
+	global target_y
+	global target_class
+	mymsg = mymsg[mymsg.find('$'):mymsg.find('*')]
+	mystr = mymsg.split(',')
+	if mystr[0] == '$TGT':
+		if mystr[1] == 'FV':
+			if int(mystr[6]) > CONFIDENCE_LIMIT:
+				target_class = mystr[3]
+				target_x = int(mystr[4])
+				target_y = int(mystr[5])
+			
+	
 def initvariables():
 	global Current_Yaw_rad
 	global Current_Pitch_rad
@@ -283,6 +313,16 @@ def initvariables():
 	global pose_pitch
 	global pose_yaw
 	global front_image_vector
+	global imagenum
+	global target_x
+	global target_y
+	global target_class
+	global bufferdelay
+	bufferdelay = .2
+	target_x = -1
+	target_y = -1
+	target_class = 'None'
+	imagenum = 0
 	front_image_vector = []
 	pose_x = 0
 	pose_y = 0
