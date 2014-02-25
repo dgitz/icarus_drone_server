@@ -94,7 +94,11 @@ if targetmode == "Acquire":
 			shutil.rmtree(target_acquire_classdir)
 			os.makedirs(target_acquire_classdir,0777)
 		
-
+if targetmode =='Execute':
+	image_buffer = '/media/icarusshare/'
+	matlabserver_socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+	matlabserver_socket.connect((matlabserver_ip,matlabserver_port))
+		
 	
 
 
@@ -124,12 +128,11 @@ class ros_service:
 			self.poseestimate_sub = rospy.Subscriber("/ardrone/predictedPose",filter_state,self.cb_pose_estimate)
 			self.frontimg_sub = rospy.Subscriber("/ardrone/front/image_raw",Image,self.cb_newfront_img)
 	def cb_newfront_img(self,data):
-		global front_image_vector
-		
+		pdb.set_trace()
 		color_im = self.bridge.imgmsg_to_cv(data)
 		color_image = np.array(color_im)
-		height,width,depth = np.shape(color_image)
-		front_image_vector = color_image.reshape([1,height*width*depth]).astype('int')
+		filename = '{}dumb.png'.format(image_buffer)
+		cv2.imwrite(filename,color_image)
 	def cb_pose_estimate(self,data):
 		global pose_x
 		global pose_y
@@ -225,13 +228,7 @@ def mainloop():
 	#rospy.sleep(5) #Wait 15 seconds to allow all devices to powerup
 	
 	#device_mc.changemode(mavlink.MAV_MODE_MANUAL_DISARMED)
-	if targetmode =='Execute':
-		if xmitmode == 'UDP':
-			s = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
-		elif xmitmode == 'TCP':
-			s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
-			s.connect((matlabserver_ip,matlabserver_port))
-		
+
 
 	while not rospy.is_shutdown():
 		#time.sleep(1)
@@ -250,21 +247,7 @@ def mainloop():
 		#print updaterate
 		dt = datetime.datetime.now()
 		#print "x: {}, y: {}, z: {}, r: {}, p: {}, y: {}".format(pose_x,pose_y,pose_z,pose_roll,pose_pitch,pose_yaw)
-		if targetmode == 'Execute':
-			print 'sending image {}'.format(np.size(front_image_vector))
-			if xmitmode == 'UDP':
-				s.sendto("{}\r\n".format(front_image_vector),(matlabserver_ip,matlabserver_port))
-			elif xmitmode == 'TCP':
-				msg = 'CAM,FV{}*'.format(front_image_vector)
-				pdb.set_trace()
-				s.sendall(msg)
-			time.sleep(1)
 		if targetmode=='Test':
-			print "Hello"
-			if xmitmode == 'UDP':
-				s.sendto("HELLO WORLD*\r\n",(matlabserver_ip,matlabserver_port))
-			elif xmitmode == 'TCP':
-				bytes = s.sendall('{}*'.format(range(691200)))
 			time.sleep(1)
 			
 		
