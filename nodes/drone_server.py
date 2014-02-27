@@ -131,21 +131,26 @@ class ros_service:
 			self.frontimg_sub = rospy.Subscriber("/ardrone/front/image_raw",Image,self.cb_newfront_img)
 	def cb_newfront_img(self,data):
 		global imagenum
-		'''global bufferdelay
-		count = len(os.listdir(image_buffer))
-		if count > 5: 
-			bufferdelay = bufferdelay * 1.1
-		elif count < 3:
-			bufferdelay = bufferdelay * .9
-		print bufferdelay'''
+		global bufferdelay
+		if imagenum % 5 == 0:
+			count = len(os.listdir(image_buffer))
+			if count > 7: 
+				bufferdelay = bufferdelay * 1.1
+			elif count < 3:
+				bufferdelay = bufferdelay * .9
+			print bufferdelay
 		imagenum = imagenum + 1
 		color_im = self.bridge.imgmsg_to_cv(data)
+		
+		
 		color_image = np.array(color_im)
+		(height,width,d) = color_image.shape
+		color_image = cv2.resize(color_image,(width/10,height/10))
 		tempstr = '{}Image{:04d}.png'.format(image_buffer,imagenum)
 		cv2.imwrite(tempstr,color_image)
 		if imagenum > 1000:
 			imagenum = 0
-		time.sleep(.65) #Time delay for Buffer, too short (like 0) and buffer will fill up way too fast and will bog down matlab_server.  .65 Seconds seems to be good
+		time.sleep(bufferdelay) #Time delay for Buffer, too short (like 0) and buffer will fill up way too fast and will bog down matlab_server.  .65 Seconds seems to be good
 	def cb_pose_estimate(self,data):
 		global pose_x
 		global pose_y
@@ -272,17 +277,21 @@ def mainloop():
 		
 
 def icarus_msghandler(mymsg):
-	global target_x
-	global target_y
-	global target_class
-	mymsg = mymsg[mymsg.find('$'):mymsg.find('*')]
-	mystr = mymsg.split(',')
-	if mystr[0] == '$TGT':
-		if mystr[1] == 'FV':
-			if int(mystr[6]) > CONFIDENCE_LIMIT:
-				target_class = mystr[3]
-				target_x = int(mystr[4])
-				target_y = int(mystr[5])
+	try:
+		global target_x
+		global target_y
+		global target_class
+		if mymsg.find('$') >= 0 and mymsg.find('*') >= 0:
+			tempstr = mymsg[mymsg.find('$'):mymsg.find('*')]
+			mystr = tempstr.split(',')
+			if mystr[0] == '$TGT':
+				if mystr[1] == 'FV':
+					if int(mystr[6]) > CONFIDENCE_LIMIT:
+						target_class = mystr[3]
+						target_x = int(mystr[4])
+						target_y = int(mystr[5])
+	except IndexError:
+		pdb.set_trace()
 			
 	
 def initvariables():
