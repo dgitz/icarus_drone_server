@@ -161,15 +161,18 @@ class ros_service:
 		imagenum = imagenum + 1
 		color_im = self.bridge.imgmsg_to_cv(data)
 		
-		
+		resize = 1
 		color_image = np.array(color_im)
 		(height,width,d) = color_image.shape
 		color_image = cv2.resize(color_image,(width/resize,height/resize))
+		mybuffer = cv2.cvtColor(color_image,cv2.COLOR_BGR2GRAY)
+		pdb.set_trace()
+		mybuffer = mybuffer.reshape(1,(width/resize,height/resize))
 		
 		matlabserver_socket.send('$')
-		tempstr = '{:08d}'.format(height*width*d/(resize*resize))
+		tempstr = '{:08d}'.format(height*width*1/(resize*resize))
 		matlabserver_socket.send(tempstr)
-		matlabserver_socket.sendall(color_image)
+		matlabserver_socket.sendall(mybuffer)
 		pdb.set_trace()
 		if imagenum > 1000:
 			imagenum = 0
