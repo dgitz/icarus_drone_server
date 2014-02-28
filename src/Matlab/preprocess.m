@@ -1,4 +1,4 @@
-function [ newim ] = preprocess( im,script,factor )
+function [ newim ] = preprocess( im,script,factor,mode )
 %UNTITLED2 Summary of this function goes here
 %   Detailed explanation goes here
 if script == 'Script1'
@@ -23,6 +23,16 @@ elseif script == 'Script3'
     newim(:,:,3) = double(im(:,:,3)) .* filter;
     newim = 255*newim;
     newim = rgb2gray(newim);
+elseif script == 'Script4'
+    if mode == 'Live'
+         newim = im;
+    elseif mode == 'Train'
+         newim = imresize(im,.1);
+    end
+   
+    newim = rgb2hsv(newim);
+    newim = newim(:,:,3);
+    newim = im2bw(newim,.8);
 end
 end
 

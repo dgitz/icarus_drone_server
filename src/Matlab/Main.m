@@ -4,8 +4,12 @@ close all
 clear variables
 clc
 SHUFFLE = true;
-Script = 'Script3';
+ROWS = 6;
+COLS = 6;
+Script = 'Script4';
 %SCALE_FACTOR = .5;
+SHOW_IMAGES_LOAD = false;
+SHOW_IMAGES_RUN = true;
 LoadTrainingSamples;
 %pack
 %keep trainitems Script SHUFFLE TargetTestMatrix TargetTrainMatrix TrainMatrix TestMatrix
@@ -14,27 +18,28 @@ main_run = true;
 NetworkStatus = false;
 
 TRAIN_LIMIT_MAX = 92;
-SUB_GRIDS = 9; %SUB_GRIDS^.5 SHOULD BE AN INTEGER
+TRAIN_LIMIT_MIN = 50;
+SUB_GRIDS = 9; %SUB_GRIDS^.5 SHOULD BE AcN INTEGER
 train_limit = TRAIN_LIMIT_MAX;
 EMAILS = true;
 TRAINFCN_CLASS = 'trainscg';
 saveimages = false;
-SHOW_IMAGES = true;
+
 MAKE_MOVIE = false;
 
-if ~SHOW_IMAGES
+if ~SHOW_IMAGES_RUN
     MAKE_MOVIE = false;
 end
 RATIO = .75;
 PAUSES = false;
 
-ResultFileID = fopen([pwd '/Results/ ' datestr(now,'mm-dd-yy_HH-MM-SS') '.csv'],'wt');
+ResultFileID = fopen([pwd '/Results/ ' datestr(now,'mm-dd-yyyy_HH-MM-SS') '.csv'],'wt');
 trainfcns = {'traingd','trainscg','traincgf','traincgp','traingda','traingdm','traingdx','trainoss'}
 while(main_run)
     
     SampleName = 'IARC';
     %choice = input('What would you like to do? \n[P]ick Pixel Targets \n[L]oad Network \nTrain [C]lassification Network \nTrain [O]bject Localizing Network \nA[U]tomated Training \n[A]cquire Images \n or [E]xit. ','s');
-    choice = input('What would you like to do? \n[T]est Image Processing \nTrain [C]lassification Network \nA[U]tomated Training \nor [E]xit. ','s');
+    choice = input('What would you like to do? \n[T]est Image Processing \nTrain [L]ocalizing Network \nTrain [C]lassification Network \nA[U]tomated Training \nor [E]xit. ','s');
     
     switch choice
         case 'T'
@@ -46,15 +51,7 @@ while(main_run)
             main_run = false;
             break;
         case 'L'
-            choice = input('[C]lassifier Network or [O]bject Localizing Networks? ','s');
-            switch choice
-                case 'C'
-                    LoadClassNetwork;
-                    NetworkStatus = true;
-                case 'O'
-                    LoadObjectNetwork;
-                    NetworkStatus = true;
-            end      
+            TrainClassNetwork;
         case 'A'
             AcquireImage
             main_run = false;
@@ -78,8 +75,9 @@ while(main_run)
                         TrainClassNetwork;
                         SaveClassNetwork;
                         case 'O'
-                            TrainObjectNetwork;
-                            SaveObjectNetwork;
+                            TrainLocalizingRowNetwork;
+                            TrainLocalizingColNetwork;
+                            SaveLocalizingNetwork;
                     end
                     NetworkStatus = true;
                 catch err
