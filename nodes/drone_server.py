@@ -50,9 +50,9 @@ parser.add_option("--slam",dest="slam",default=False)
 parser.add_option("--targetmode",dest="targetmode",default="Execute",help="Acquire,Train,Test,Execute")
 parser.add_option("--target_acquire_mode",dest="target_acquire_mode",default="Live",help="Live,Simulated")
 parser.add_option("--target_acquire_class",dest="target_acquire_class",default="None",help="Name of Target Class")
-parser.add_option("--target_acquire_count",dest="target_acquire_count",default="50",help="Number of Images to acquire")
-parser.add_option("--target_acquire_rate",dest="target_acquire_rate",default="1",help="Number of Images to acquire per second")
-parser.add_option("--script",dest="script",default='Script6',help="Image Preprocessing Script")
+parser.add_option("--target_acquire_count",dest="target_acquire_count",default="400",help="Number of Images to acquire")
+parser.add_option("--target_acquire_rate",dest="target_acquire_rate",default="10",help="Number of Images to acquire per second")
+parser.add_option("--script",dest="script",default='Script7',help="Image Preprocessing Script")
 
 
 (opts,args) = parser.parse_args()
@@ -97,6 +97,8 @@ elif opts.script == 'Script6':
 	resize = 4
 	row_sectors = 6
 	col_sectors = 6
+elif opts.script == 'Script7':
+	resize = 10
 
 if targetmode == "Acquire":
 	target_acquire_mode = opts.target_acquire_mode
@@ -163,7 +165,6 @@ class ros_service:
 		color_image = cv2.resize(color_image,(width/resize,height/resize))
 		myheader = '$CAM,DFV'
 		l = '{:08d}'.format(height*width*depth/(resize*resize))
-		print l
 		if xmitmode == 'UDP':
 			matlabserver_socket.sendto(myheader,(matlabserver_ip,matlabserver_port))
 			matlabserver_socket.sendto(l,(matlabserver_ip,matlabserver_port))
@@ -172,7 +173,7 @@ class ros_service:
 			matlabserver_socket.send(myheader)
 			matlabserver_socket.send(l)
 			matlabserver_socket.sendall(color_image)
-		time.sleep(.05)
+		time.sleep(.25)
 	def cb_pose_estimate(self,data):
 		global pose_x
 		global pose_y
@@ -189,24 +190,29 @@ class ros_service:
 		
 	def callbackCameraAcquire(self,data):
 		global imagenum
-		try:
-			if imagenum < target_acquire_count:
-				imagenum = imagenum + 1
-				time.sleep(1/target_acquire_rate)
-				tempstr = 'Image{:04d}.png'.format(imagenum)
-				color_im = self.bridge.imgmsg_to_cv(data)
-				#pdb.set_trace()
-				color_image = np.array(color_im)
-				cv2.imshow("RGB",color_image)
-				filename = '{}{}'.format(target_acquire_classdir,tempstr)
-				cv2.imwrite(filename,color_image)
-				print 'Image: {}/{} Completed.'.format(imagenum,target_acquire_count)
-				cv2.waitKey(1)
-			else:
-				print 'Image Acquisition Finished'
+		global gInitComplete
+		if gInitComplete:
+			try:
+				if imagenum < target_acquire_count:
+					imagenum = imagenum + 1
+					time.sleep(1/target_acquire_rate)
+					tempstr = 'Image{:04d}.png'.format(imagenum)
+					color_im = self.bridge.imgmsg_to_cv(data)
+					#pdb.set_trace()
+					color_image = np.array(color_im)
+					cv2.imshow("RGB",color_image)
+					(height,width,depth) = color_image.shape	
+					color_image = cv2.resize(color_image,(width/resize,height/resize))
+					
+					filename = '{}{}'.format(target_acquire_classdir,tempstr)
+					cv2.imwrite(filename,color_image)
+					print 'Image: {}/{} Completed.'.format(imagenum,target_acquire_count)
+					cv2.waitKey(1)
+				else:
+					print 'Image Acquisition Finished'
 				
-		except CvBridgeError,e:
-			print e
+			except CvBridgeError,e:
+				print e
 
 	
 def mainloop():
@@ -229,6 +235,9 @@ def mainloop():
 	global target_x
 	global target_y
 	global target_class
+	global last_target_x
+	global last_target_y
+	global gInitComplete
 	my_MissionItems = []
 	#device_gcs.display()
 	first_attitude_packet = True
@@ -261,8 +270,9 @@ def mainloop():
 	curtime = starttime
 	user_command = "q"
 	#device_mc.changemode(mavlink.MAV_MODE_PREFLIGHT)		
-	print "Waiting 3 seconds..."
-	rospy.sleep(3)
+	print "Waiting 10 seconds..."
+	rospy.sleep(10)
+	gInitComplete = True
 	#device_mc.changemode(mavlink.MAV_MODE_MANUAL_DISARMED)	
 	
         
@@ -292,7 +302,7 @@ def mainloop():
 		if targetmode == 'Execute':
 			
 			icarus_msghandler(matlabserver_socket)
-			print 'Recognized Class: {}'.format(target_class)
+			print 'Class: {} X:{} Y: {}'.format(target_class,target_x,target_y)
 	print 'Exiting Program'
 	matlabserver_socket.close()
 	time.sleep(5)
@@ -305,6 +315,8 @@ def icarus_msghandler(mysocket):
 	try:
 		global target_x
 		global target_y
+		global last_target_x
+		global last_target_y
 		global target_class
 		if xmitmode == 'TCP':
 			packet_type = mysocket.recv(8)
@@ -322,8 +334,14 @@ def icarus_msghandler(mysocket):
 				mystr = msg.split(',')
 				if int(mystr[3]) > CONFIDENCE_LIMIT:
 					target_class = mystr[0]
-					target_x = int(mystr[1])
-					target_y = int(mystr[2])
+					if target_class <> 'None':
+						target_x = int(mystr[1])
+						target_y = int(mystr[2])
+						last_target_x = target_x
+						last_target_y = target_y
+					else:
+						target_x = last_target_x
+						target_y = last_target_y
 	except IndexError:
 		pdb.set_trace()
 			
@@ -360,8 +378,12 @@ def initvariables():
 	global target_x
 	global target_y
 	global target_class
-	global bufferdelay
-	bufferdelay = .2
+	global last_target_x
+	global last_target_y
+	global gInitComplete
+	gInitComplete = False
+	last_target_x = 0
+	last_target_y = 0
 	target_x = -1
 	target_y = -1
 	target_class = 'None'
