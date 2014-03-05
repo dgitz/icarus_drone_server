@@ -14,6 +14,7 @@ import cv2
 from cv_bridge import CvBridge, CvBridgeError
 from sensor_msgs.msg import Image
 from stereo_msgs.msg import DisparityImage
+from sensor_msgs.msg import Joy
 import tf
 import datetime
 import time
@@ -47,12 +48,14 @@ parser = OptionParser("drone_server.py [options]")
 #parser.add_option("--mode",dest="mode",default="None",help="net,slam,None")
 parser.add_option("--nav",dest="nav",default=False)
 parser.add_option("--slam",dest="slam",default=False)
-parser.add_option("--targetmode",dest="targetmode",default="Execute",help="Acquire,Train,Test,Execute")
+parser.add_option("--targetmode",dest="targetmode",default="Test",help="Acquire,Train,Test,Execute,Test")
 parser.add_option("--target_acquire_mode",dest="target_acquire_mode",default="Live",help="Live,Simulated")
 parser.add_option("--target_acquire_class",dest="target_acquire_class",default="None",help="Name of Target Class")
 parser.add_option("--target_acquire_count",dest="target_acquire_count",default="400",help="Number of Images to acquire")
 parser.add_option("--target_acquire_rate",dest="target_acquire_rate",default="10",help="Number of Images to acquire per second")
 parser.add_option("--script",dest="script",default='Script7',help="Image Preprocessing Script")
+parser.add_option("--use_joystick",dest="use_joystick",default='True',help="True or False")
+parser.add_option("--debug",dest="debug",default='True',help="True or False")
 
 
 (opts,args) = parser.parse_args()
@@ -82,6 +85,14 @@ if opts.nav == "True":
 	nav_enabled = True
 else:
 	nav_enabled = False
+if opts.use_joystick == "True":
+	use_joystick = True
+else:
+	use_joystick = False
+if opts.debug == "True":
+	DEBUG = True
+else:
+	DEBUG = False
 resize = 1
 row_sectors = 1
 col_sectors = 1
@@ -114,17 +125,8 @@ if targetmode == "Acquire":
 			shutil.rmtree(target_acquire_classdir)
 			os.makedirs(target_acquire_classdir,0777)
 		
-if targetmode =='Execute':
-	#image_buffer = '/home/davidgitz/icarus_share/ImagesToProcess/'
-	if xmitmode == 'TCP':
-		matlabserver_socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
-		matlabserver_socket.connect((matlabserver_ip,matlabserver_port))
-	elif xmitmode == 'UDP':
-		matlabserver_socket = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
-elif targetmode =='Test':
-	#image_buffer = '/home/dgitz/icarus_share/ImagesToProcess/'
-	matlabserver_socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
-	matlabserver_socket.connect((matlabserver_ip,matlabserver_port))
+
+
 
 	
 	
@@ -155,8 +157,28 @@ class ros_service:
 			self.bridge = CvBridge()
 			self.poseestimate_sub = rospy.Subscriber("/ardrone/predictedPose",filter_state,self.cb_pose_estimate)
 			self.frontimg_sub = rospy.Subscriber("/ardrone/front/image_raw",Image,self.cb_newfront_img)
+			if xmitmode == 'TCP':
+				matlabserver_socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+				matlabserver_socket.connect((matlabserver_ip,matlabserver_port))
+			elif xmitmode == 'UDP':
+				matlabserver_socket = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
 		elif targetmode == 'Test': #For Development/debugging only
-			cv2.namedWindow("test",1)
+			if use_joystick:
+				self.joy = rospy.Subscriber('joy', Joy, self.joyCallback)
+	def joyCallback(self, joy):
+		self.joyaxis_pitch = 1
+		self.joyaxis_roll = 0
+		self.joyaxis_throttle = 3
+		self.joyaxis_yaw = 2
+		self.joybutton_takeoff = 0
+		self.joybutton_land = 2
+		if joy.buttons[self.joybutton_takeoff]:
+			if DEBUG:print 'Taking Off'
+		if joy.buttons[self.joybutton_land]:
+			if DEBUG:print 'Landing'
+		if DEBUG:print 'P: {:.2f} R: {:.2f} Y: {:.2f} T: {:.2f}'.format(joy.axes[self.joyaxis_pitch],joy.axes[self.joyaxis_roll],joy.axes[self.joyaxis_yaw],joy.axes[self.joyaxis_throttle])
+
+		
 	def cb_newfront_img(self,data):
 		global imagenum
 		color_im = self.bridge.imgmsg_to_cv(data)
@@ -270,9 +292,10 @@ def mainloop():
 	curtime = starttime
 	user_command = "q"
 	#device_mc.changemode(mavlink.MAV_MODE_PREFLIGHT)		
-	print "Waiting 30 seconds..."
-	rospy.sleep(10)
+	print "Waiting 2 seconds..."
+	rospy.sleep(2)
 	gInitComplete = True
+	print 'Initialization Complete.  Starting Mode: {}'.format(targetmode)
 	#device_mc.changemode(mavlink.MAV_MODE_MANUAL_DISARMED)	
 	
         
