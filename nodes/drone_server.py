@@ -24,6 +24,8 @@ import serial
 import shutil
 import socket
 import numpy as np
+import rosbag
+from geometry_msgs.msg import Twist
 np.set_printoptions(threshold=np.nan)
 
 xmitmode = 'TCP'
@@ -48,13 +50,13 @@ parser = OptionParser("drone_server.py [options]")
 #parser.add_option("--mode",dest="mode",default="None",help="net,slam,None")
 parser.add_option("--nav",dest="nav",default=False)
 parser.add_option("--slam",dest="slam",default=False)
-parser.add_option("--targetmode",dest="targetmode",default="Test",help="Acquire,Train,Test,Execute,Test")
+parser.add_option("--mode",dest="mode",default="Test",help="Acquire,Train,Test,Execute,Test")
 parser.add_option("--target_acquire_mode",dest="target_acquire_mode",default="Live",help="Live,Simulated")
 parser.add_option("--target_acquire_class",dest="target_acquire_class",default="None",help="Name of Target Class")
 parser.add_option("--target_acquire_count",dest="target_acquire_count",default="400",help="Number of Images to acquire")
 parser.add_option("--target_acquire_rate",dest="target_acquire_rate",default="10",help="Number of Images to acquire per second")
 parser.add_option("--script",dest="script",default='Script7',help="Image Preprocessing Script")
-parser.add_option("--use_joystick",dest="use_joystick",default='True',help="True or False")
+parser.add_option("--use_joystick",dest="use_joystick",default='False',help="True or False")
 parser.add_option("--debug",dest="debug",default='True',help="True or False")
 
 
@@ -75,7 +77,7 @@ parser.add_option("--debug",dest="debug",default='True',help="True or False")
 #print my_MissionItems[0].calc_distance(12.0,37.0)
 
 
-targetmode = opts.targetmode
+mode = opts.mode
 
 if opts.slam == "True":
 	slam_enabled = True
@@ -111,7 +113,7 @@ elif opts.script == 'Script6':
 elif opts.script == 'Script7':
 	resize = 10
 
-if targetmode == "Acquire":
+if mode == "Acquire":
 	target_acquire_mode = opts.target_acquire_mode
 	if target_acquire_mode == "Live":
 		target_acquire_class = opts.target_acquire_class
@@ -148,12 +150,12 @@ my_MissionItems = []
 class ros_service:
 	
 	def __init__(self):
-		if targetmode == "Acquire":
+		if mode == "Acquire":
 			cv2.namedWindow("RGB",1)
 			self.bridge = CvBridge()
 			self.image_sub = rospy.Subscriber("/ardrone/front/image_raw",Image,self.callbackCameraAcquire)
 			print 'Starting Image Acquisition'
-		elif targetmode == "Execute":	
+		elif mode == "Execute":	
 			self.bridge = CvBridge()
 			self.poseestimate_sub = rospy.Subscriber("/ardrone/predictedPose",filter_state,self.cb_pose_estimate)
 			self.frontimg_sub = rospy.Subscriber("/ardrone/front/image_raw",Image,self.cb_newfront_img)
@@ -162,9 +164,12 @@ class ros_service:
 				matlabserver_socket.connect((matlabserver_ip,matlabserver_port))
 			elif xmitmode == 'UDP':
 				matlabserver_socket = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
-		elif targetmode == 'Test': #For Development/debugging only
+		elif mode == 'Test': #For Development/debugging only
 			if use_joystick:
 				self.joy = rospy.Subscriber('joy', Joy, self.joyCallback)
+				self.teleopcmd_pub = rospy.Publisher('cmd_vel',Twist)
+				self.teleoptakeoff_pub = ros.Publisher('ardrone/takeoff','')
+				self.teleopland_pub = ros.Publisher('ardrone/land','')
 	def joyCallback(self, joy):
 		self.joyaxis_pitch = 1
 		self.joyaxis_roll = 0
@@ -172,12 +177,19 @@ class ros_service:
 		self.joyaxis_yaw = 2
 		self.joybutton_takeoff = 0
 		self.joybutton_land = 2
+		twist = Twist()
 		if joy.buttons[self.joybutton_takeoff]:
 			if DEBUG:print 'Taking Off'
+			self.teleoptakeoff_pub.publish()
 		if joy.buttons[self.joybutton_land]:
 			if DEBUG:print 'Landing'
+			self.teleopland_pub.publish()
 		if DEBUG:print 'P: {:.2f} R: {:.2f} Y: {:.2f} T: {:.2f}'.format(joy.axes[self.joyaxis_pitch],joy.axes[self.joyaxis_roll],joy.axes[self.joyaxis_yaw],joy.axes[self.joyaxis_throttle])
-
+		'''twist.linear.x = joy.axes[self.joyaxis_pitch]
+		twist.linear.y = joy.axes[self.joyaxis_roll]
+		twist.linear.z = joy.axes[self.joyaxis_throttle]
+		twist.angular.z = joy.axes[self.joyaxis_yaw]
+		self.teleopcmd_pub.publish(twist)'''
 		
 	def cb_newfront_img(self,data):
 		global imagenum
@@ -295,7 +307,7 @@ def mainloop():
 	print "Waiting 2 seconds..."
 	rospy.sleep(2)
 	gInitComplete = True
-	print 'Initialization Complete.  Starting Mode: {}'.format(targetmode)
+	print 'Initialization Complete.  Starting Mode: {}'.format(mode)
 	#device_mc.changemode(mavlink.MAV_MODE_MANUAL_DISARMED)	
 	
         
@@ -322,13 +334,16 @@ def mainloop():
 		#print updaterate
 		dt = datetime.datetime.now()
 		#print "x: {}, y: {}, z: {}, r: {}, p: {}, y: {}".format(pose_x,pose_y,pose_z,pose_roll,pose_pitch,pose_yaw)
-		if targetmode == 'Execute':
+		if mode == 'Execute':
 			
 			icarus_msghandler(matlabserver_socket)
 			print 'Class: {} X:{} Y: {}'.format(target_class,target_x,target_y)
+			
 	print 'Exiting Program'
-	matlabserver_socket.close()
-	time.sleep(5)
+	if mode == 'Execute':
+		matlabserver_socket.close()
+		time.sleep(5)
+
 			
 			
 		
@@ -474,5 +489,4 @@ def calcchecksum(item):
 		
 if __name__ == '__main__':
         mainloop()
-
 
