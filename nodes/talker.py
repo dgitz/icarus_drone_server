@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import roslib; roslib.load_manifest('beginner_tutorials')
 import rospy
 from std_msgs.msg import String
 

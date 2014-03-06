@@ -15,6 +15,7 @@ from cv_bridge import CvBridge, CvBridgeError
 from sensor_msgs.msg import Image
 from stereo_msgs.msg import DisparityImage
 from sensor_msgs.msg import Joy
+from std_msgs.msg import Empty
 import tf
 import datetime
 import time
@@ -56,7 +57,7 @@ parser.add_option("--target_acquire_class",dest="target_acquire_class",default="
 parser.add_option("--target_acquire_count",dest="target_acquire_count",default="400",help="Number of Images to acquire")
 parser.add_option("--target_acquire_rate",dest="target_acquire_rate",default="10",help="Number of Images to acquire per second")
 parser.add_option("--script",dest="script",default='Script7',help="Image Preprocessing Script")
-parser.add_option("--use_joystick",dest="use_joystick",default='False',help="True or False")
+parser.add_option("--use_joystick",dest="use_joystick",default='True',help="True or False")
 parser.add_option("--debug",dest="debug",default='True',help="True or False")
 
 
@@ -168,8 +169,9 @@ class ros_service:
 			if use_joystick:
 				self.joy = rospy.Subscriber('joy', Joy, self.joyCallback)
 				self.teleopcmd_pub = rospy.Publisher('cmd_vel',Twist)
-				self.teleoptakeoff_pub = ros.Publisher('ardrone/takeoff','')
-				self.teleopland_pub = ros.Publisher('ardrone/land','')
+				self.teleoptakeoff_pub = rospy.Publisher('/ardrone/takeoff',Empty)
+				self.teleopland_pub = rospy.Publisher('/ardrone/land',Empty)
+				self.teleopreset_pub = rospy.Publisher('/ardrone/reset',Empty)
 	def joyCallback(self, joy):
 		self.joyaxis_pitch = 1
 		self.joyaxis_roll = 0
@@ -177,19 +179,23 @@ class ros_service:
 		self.joyaxis_yaw = 2
 		self.joybutton_takeoff = 0
 		self.joybutton_land = 2
+		self.joybutton_reset = 3
 		twist = Twist()
 		if joy.buttons[self.joybutton_takeoff]:
 			if DEBUG:print 'Taking Off'
-			self.teleoptakeoff_pub.publish()
+			self.teleoptakeoff_pub.publish(Empty())
 		if joy.buttons[self.joybutton_land]:
 			if DEBUG:print 'Landing'
-			self.teleopland_pub.publish()
+			self.teleopland_pub.publish(Empty())
+		if joy.buttons[self.joybutton_reset]:
+			if DEBUG:print 'Resetting'
+			self.teleopreset_pub.publish(Empty())
 		if DEBUG:print 'P: {:.2f} R: {:.2f} Y: {:.2f} T: {:.2f}'.format(joy.axes[self.joyaxis_pitch],joy.axes[self.joyaxis_roll],joy.axes[self.joyaxis_yaw],joy.axes[self.joyaxis_throttle])
-		'''twist.linear.x = joy.axes[self.joyaxis_pitch]
+		twist.linear.x = joy.axes[self.joyaxis_pitch]
 		twist.linear.y = joy.axes[self.joyaxis_roll]
 		twist.linear.z = joy.axes[self.joyaxis_throttle]
 		twist.angular.z = joy.axes[self.joyaxis_yaw]
-		self.teleopcmd_pub.publish(twist)'''
+		self.teleopcmd_pub.publish(twist)
 		
 	def cb_newfront_img(self,data):
 		global imagenum
