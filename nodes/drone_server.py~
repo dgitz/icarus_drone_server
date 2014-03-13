@@ -1,4 +1,5 @@
 #!/usr/bin/python
+import pdb
 import roslib
 roslib.load_manifest('icarus_drone_server')
 packagepath = roslib.packages.get_pkg_dir('icarus_drone_server')
@@ -6,7 +7,7 @@ import rospy
 from std_msgs.msg import String, Header
 from sensor_msgs.msg import NavSatFix, NavSatStatus, Imu,CameraInfo
 from icarus_drone_server.msg import *
-import pdb
+
 import math
 import sys
 import os
@@ -31,10 +32,10 @@ np.set_printoptions(threshold=np.nan)
 
 xmitmode = 'TCP'
 if xmitmode == 'UDP':
-	matlabserver_ip = '192.168.0.102'
+	matlabserver_ip = '127.0.0.1'
 	matlabserver_port = 5006
 elif xmitmode == 'TCP':
-	matlabserver_ip = '192.168.0.102'
+	matlabserver_ip = '192.168.0.104'
 	matlabserver_port = 5005
 
 #import rgbdslam.msg
@@ -51,14 +52,16 @@ parser = OptionParser("drone_server.py [options]")
 #parser.add_option("--mode",dest="mode",default="None",help="net,slam,None")
 parser.add_option("--nav",dest="nav",default=False)
 parser.add_option("--slam",dest="slam",default=False)
-parser.add_option("--mode",dest="mode",default="Test",help="Acquire,Train,Test,Execute,Test")
+parser.add_option("--mode",dest="mode",default="Acquire",help="Acquire,Train,Test,Execute,Test")
 parser.add_option("--target_acquire_mode",dest="target_acquire_mode",default="Live",help="Live,Simulated")
 parser.add_option("--target_acquire_class",dest="target_acquire_class",default="None",help="Name of Target Class")
 parser.add_option("--target_acquire_count",dest="target_acquire_count",default="400",help="Number of Images to acquire")
 parser.add_option("--target_acquire_rate",dest="target_acquire_rate",default="10",help="Number of Images to acquire per second")
-parser.add_option("--script",dest="script",default='Script7',help="Image Preprocessing Script")
-parser.add_option("--use_joystick",dest="use_joystick",default='True',help="True or False")
+parser.add_option("--script",dest="script",default='Script6',help="Image Preprocessing Script")
+parser.add_option("--use_joystick",dest="use_joystick",default='False',help="True or False")
 parser.add_option("--debug",dest="debug",default='True',help="True or False")
+parser.add_option("--matlabserver",dest="matlabserver",default='True',help="True or False")
+parser.add_option("--simserver",dest="simserver",default='False',help='True or False')
 
 
 (opts,args) = parser.parse_args()
@@ -79,7 +82,7 @@ parser.add_option("--debug",dest="debug",default='True',help="True or False")
 
 
 mode = opts.mode
-
+resize = 5
 if opts.slam == "True":
 	slam_enabled = True
 else:
@@ -96,23 +99,12 @@ if opts.debug == "True":
 	DEBUG = True
 else:
 	DEBUG = False
-resize = 1
-row_sectors = 1
-col_sectors = 1
-if opts.script == 'Script2':
-	resize = 2
-	row_sectors = 4
-	col_sectors = 4
-elif opts.script == 'Script4':
-	resize = 10
-	row_sectors = 6
-	col_sectors = 6
-elif opts.script == 'Script6':
-	resize = 4
-	row_sectors = 6
-	col_sectors = 6
-elif opts.script == 'Script7':
-	resize = 10
+
+if opts.simserver == 'True':
+	simserver_enabled = True
+else:
+	simserver_enabled = False
+
 
 if mode == "Acquire":
 	target_acquire_mode = opts.target_acquire_mode
@@ -151,27 +143,44 @@ my_MissionItems = []
 class ros_service:
 	
 	def __init__(self):
+		global matlabserver_initialized
+		global matlabserver_enabled
+		global matlabserver_socket
+		if opts.matlabserver == 'True':
+			matlabserver_enabled = True
+			matlabserver_initialized = False
+		else:
+			matlabserver_enabled = False
+			matlabserver_initialized = False
 		if mode == "Acquire":
-			cv2.namedWindow("RGB",1)
+			cv2.namedWindow("Gray",1)
 			self.bridge = CvBridge()
 			self.image_sub = rospy.Subscriber("/ardrone/front/image_raw",Image,self.callbackCameraAcquire)
 			print 'Starting Image Acquisition'
 		elif mode == "Execute":	
+			
 			self.bridge = CvBridge()
 			self.poseestimate_sub = rospy.Subscriber("/ardrone/predictedPose",filter_state,self.cb_pose_estimate)
 			self.frontimg_sub = rospy.Subscriber("/ardrone/front/image_raw",Image,self.cb_newfront_img)
-			if xmitmode == 'TCP':
-				matlabserver_socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
-				matlabserver_socket.connect((matlabserver_ip,matlabserver_port))
-			elif xmitmode == 'UDP':
-				matlabserver_socket = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
-		elif mode == 'Test': #For Development/debugging only
+			
+			if matlabserver_enabled:
+				if xmitmode == 'TCP':
+					matlabserver_socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+					abcd = matlabserver_socket.connect((matlabserver_ip,matlabserver_port))
+					
+					matlabserver_initialized = True
+					
+				elif xmitmode == 'UDP':
+					matlabserver_socket = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
+					matlabserver_initialized = True
 			if use_joystick:
 				self.joy = rospy.Subscriber('joy', Joy, self.joyCallback)
 				self.teleopcmd_pub = rospy.Publisher('cmd_vel',Twist)
 				self.teleoptakeoff_pub = rospy.Publisher('/ardrone/takeoff',Empty)
 				self.teleopland_pub = rospy.Publisher('/ardrone/land',Empty)
-				self.teleopreset_pub = rospy.Publisher('/ardrone/reset',Empty)
+				#self.teleopreset_pub = rospy.Publisher('/ardrone/reset',Empty)
+		#elif mode == 'Test': #For Development/debugging only
+			
 	def joyCallback(self, joy):
 		self.joyaxis_pitch = 1
 		self.joyaxis_roll = 0
@@ -179,7 +188,6 @@ class ros_service:
 		self.joyaxis_yaw = 2
 		self.joybutton_takeoff = 0
 		self.joybutton_land = 2
-		self.joybutton_reset = 3
 		twist = Twist()
 		if joy.buttons[self.joybutton_takeoff]:
 			if DEBUG:print 'Taking Off'
@@ -187,33 +195,40 @@ class ros_service:
 		if joy.buttons[self.joybutton_land]:
 			if DEBUG:print 'Landing'
 			self.teleopland_pub.publish(Empty())
-		if joy.buttons[self.joybutton_reset]
-			if DEBUG:print 'Resetting'
-			self.teleopreset_pub.publish(Empty())
 		if DEBUG:print 'P: {:.2f} R: {:.2f} Y: {:.2f} T: {:.2f}'.format(joy.axes[self.joyaxis_pitch],joy.axes[self.joyaxis_roll],joy.axes[self.joyaxis_yaw],joy.axes[self.joyaxis_throttle])
 		twist.linear.x = joy.axes[self.joyaxis_pitch]
 		twist.linear.y = joy.axes[self.joyaxis_roll]
 		twist.linear.z = joy.axes[self.joyaxis_throttle]
-		twist.angular.z = joy.axes[self.joyaxis_yaw]
+		twist.angular.z = joy.axes[self.joyaxis_yaw]/2
 		self.teleopcmd_pub.publish(twist)
 		
 	def cb_newfront_img(self,data):
 		global imagenum
+		global matlabserver_initialized
+		global matlabserver_enabled
+		global matlabserver_socket
 		color_im = self.bridge.imgmsg_to_cv(data)
 		color_image = np.array(color_im)
-		(height,width,depth) = color_image.shape	
+		(height,width,depth) = color_image.shape
 		color_image = cv2.resize(color_image,(width/resize,height/resize))
 		myheader = '$CAM,DFV'
 		l = '{:08d}'.format(height*width*depth/(resize*resize))
-		if xmitmode == 'UDP':
-			matlabserver_socket.sendto(myheader,(matlabserver_ip,matlabserver_port))
-			matlabserver_socket.sendto(l,(matlabserver_ip,matlabserver_port))
-			matlabserver_socket.sendto(color_image,(matlabserver_ip,matlabserver_port))
-		elif xmitmode == 'TCP':
-			matlabserver_socket.send(myheader)
-			matlabserver_socket.send(l)
-			matlabserver_socket.sendall(color_image)
-		time.sleep(.25)
+		
+		#pdb.set_trace()
+		#print 'Enab: {} Init: {}'.format(matlabserver_enabled,matlabserver_initialized)
+		if matlabserver_initialized:
+			
+			
+			if xmitmode == 'UDP':
+				matlabserver_socket.sendto(myheader,(matlabserver_ip,matlabserver_port))
+				matlabserver_socket.sendto(l,(matlabserver_ip,matlabserver_port))
+				matlabserver_socket.sendto(color_image,(matlabserver_ip,matlabserver_port))
+			elif xmitmode == 'TCP':
+				matlabserver_socket.send(myheader)
+				matlabserver_socket.send(l)
+				matlabserver_socket.sendall(color_image)
+				
+		#time.sleep(.25)
 	def cb_pose_estimate(self,data):
 		global pose_x
 		global pose_y
@@ -240,12 +255,15 @@ class ros_service:
 					color_im = self.bridge.imgmsg_to_cv(data)
 					#pdb.set_trace()
 					color_image = np.array(color_im)
-					cv2.imshow("RGB",color_image)
-					(height,width,depth) = color_image.shape	
-					color_image = cv2.resize(color_image,(width/resize,height/resize))
+					new_image = cv2.cvtColor(color_image, cv2.COLOR_BGR2HSV)
+					h,s,v = cv2.split(new_image)
+					cv2.imshow("Gray",v)
+					gray_image = v
+					(height,width) = gray_image.shape	
+					gray_image = cv2.resize(gray_image,(width/resize,height/resize))
 					
 					filename = '{}{}'.format(target_acquire_classdir,tempstr)
-					cv2.imwrite(filename,color_image)
+					cv2.imwrite(filename,gray_image)
 					print 'Image: {}/{} Completed.'.format(imagenum,target_acquire_count)
 					cv2.waitKey(1)
 				else:
@@ -278,6 +296,9 @@ def mainloop():
 	global last_target_x
 	global last_target_y
 	global gInitComplete
+	global matlabserver_initialized
+	global matlabserver_enabled
+	global matlabserver_socket
 	my_MissionItems = []
 	#device_gcs.display()
 	first_attitude_packet = True
@@ -310,8 +331,8 @@ def mainloop():
 	curtime = starttime
 	user_command = "q"
 	#device_mc.changemode(mavlink.MAV_MODE_PREFLIGHT)		
-	print "Waiting 2 seconds..."
-	rospy.sleep(2)
+	print "Waiting 30 seconds..."
+	rospy.sleep(30)
 	gInitComplete = True
 	print 'Initialization Complete.  Starting Mode: {}'.format(mode)
 	#device_mc.changemode(mavlink.MAV_MODE_MANUAL_DISARMED)	
@@ -341,14 +362,15 @@ def mainloop():
 		dt = datetime.datetime.now()
 		#print "x: {}, y: {}, z: {}, r: {}, p: {}, y: {}".format(pose_x,pose_y,pose_z,pose_roll,pose_pitch,pose_yaw)
 		if mode == 'Execute':
-			
-			icarus_msghandler(matlabserver_socket)
-			print 'Class: {} X:{} Y: {}'.format(target_class,target_x,target_y)
+			if matlabserver_initialized:
+				icarus_msghandler(matlabserver_socket)
+				print 'Class: {} X:{} Y: {}'.format(target_class,target_x,target_y)
 			
 	print 'Exiting Program'
 	if mode == 'Execute':
-		matlabserver_socket.close()
-		time.sleep(5)
+		if matlabserver_initialized:
+			matlabserver_socket.close()
+			time.sleep(5)
 
 			
 			
@@ -425,6 +447,11 @@ def initvariables():
 	global last_target_x
 	global last_target_y
 	global gInitComplete
+	global matlabserver_initialized
+	global matlabserver_enabled
+	global matlabserver_socket
+	matlabserver_initialized = False
+	matlabserver_enabled = False
 	gInitComplete = False
 	last_target_x = 0
 	last_target_y = 0
