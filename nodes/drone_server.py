@@ -35,7 +35,7 @@ if xmitmode == 'UDP':
 	matlabserver_ip = '127.0.0.1'
 	matlabserver_port = 5006
 elif xmitmode == 'TCP':
-	matlabserver_ip = '192.168.0.104'
+	matlabserver_ip = '192.168.0.102'
 	matlabserver_port = 5005
 
 #import rgbdslam.msg
@@ -52,7 +52,7 @@ parser = OptionParser("drone_server.py [options]")
 #parser.add_option("--mode",dest="mode",default="None",help="net,slam,None")
 parser.add_option("--nav",dest="nav",default=False)
 parser.add_option("--slam",dest="slam",default=False)
-parser.add_option("--mode",dest="mode",default="Acquire",help="Acquire,Train,Test,Execute,Test")
+parser.add_option("--mode",dest="mode",default="Execute",help="Acquire,Train,Test,Execute,Test")
 parser.add_option("--target_acquire_mode",dest="target_acquire_mode",default="Live",help="Live,Simulated")
 parser.add_option("--target_acquire_class",dest="target_acquire_class",default="None",help="Name of Target Class")
 parser.add_option("--target_acquire_count",dest="target_acquire_count",default="400",help="Number of Images to acquire")
@@ -209,11 +209,16 @@ class ros_service:
 		global matlabserver_socket
 		color_im = self.bridge.imgmsg_to_cv(data)
 		color_image = np.array(color_im)
-		(height,width,depth) = color_image.shape
-		color_image = cv2.resize(color_image,(width/resize,height/resize))
-		myheader = '$CAM,DFV'
-		l = '{:08d}'.format(height*width*depth/(resize*resize))
+		new_image = cv2.cvtColor(color_image,cv2.COLOR_BGR2HSV)
+		h,s,v = cv2.split(new_image)
+		gray_image = v
+		(height,width) = gray_image.shape
+		gray_image = cv2.resize(gray_image,(width/resize,height/resize))
 		
+		myheader = '$CAM,DFV'
+		l = '{:08d}'.format(height*width/(resize*resize))
+		
+
 		#pdb.set_trace()
 		#print 'Enab: {} Init: {}'.format(matlabserver_enabled,matlabserver_initialized)
 		if matlabserver_initialized:
@@ -226,7 +231,7 @@ class ros_service:
 			elif xmitmode == 'TCP':
 				matlabserver_socket.send(myheader)
 				matlabserver_socket.send(l)
-				matlabserver_socket.sendall(color_image)
+				matlabserver_socket.sendall(gray_image)
 				
 		#time.sleep(.25)
 	def cb_pose_estimate(self,data):

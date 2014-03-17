@@ -35,7 +35,7 @@ if xmitmode == 'UDP':
 	matlabserver_ip = '127.0.0.1'
 	matlabserver_port = 5006
 elif xmitmode == 'TCP':
-	matlabserver_ip = '192.168.0.104'
+	matlabserver_ip = '192.168.0.102'
 	matlabserver_port = 5005
 
 #import rgbdslam.msg
@@ -209,11 +209,16 @@ class ros_service:
 		global matlabserver_socket
 		color_im = self.bridge.imgmsg_to_cv(data)
 		color_image = np.array(color_im)
-		(height,width,depth) = color_image.shape
-		color_image = cv2.resize(color_image,(width/resize,height/resize))
-		myheader = '$CAM,DFV'
-		l = '{:08d}'.format(height*width*depth/(resize*resize))
+		new_image = cv2.cvtColor(color_image,cv2.COLOR_BGR2HSV)
+		h,s,v = cv2.split(new_image)
+		gray_image = v
+		(height,width) = gray_image.shape
+		gray_image = cv2.resize(gray_image,(width/resize,height/resize))
 		
+		myheader = '$CAM,DFV'
+		l = '{:08d}'.format(height*width/(resize*resize))
+		
+
 		#pdb.set_trace()
 		#print 'Enab: {} Init: {}'.format(matlabserver_enabled,matlabserver_initialized)
 		if matlabserver_initialized:
@@ -226,7 +231,7 @@ class ros_service:
 			elif xmitmode == 'TCP':
 				matlabserver_socket.send(myheader)
 				matlabserver_socket.send(l)
-				matlabserver_socket.sendall(color_image)
+				matlabserver_socket.sendall(gray_image)
 				
 		#time.sleep(.25)
 	def cb_pose_estimate(self,data):
@@ -331,8 +336,8 @@ def mainloop():
 	curtime = starttime
 	user_command = "q"
 	#device_mc.changemode(mavlink.MAV_MODE_PREFLIGHT)		
-	print "Waiting 30 seconds..."
-	rospy.sleep(30)
+	print "Waiting 10 seconds..."
+	rospy.sleep(10)
 	gInitComplete = True
 	print 'Initialization Complete.  Starting Mode: {}'.format(mode)
 	#device_mc.changemode(mavlink.MAV_MODE_MANUAL_DISARMED)	
