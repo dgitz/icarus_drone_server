@@ -58,9 +58,9 @@ parser.add_option("--target_acquire_class",dest="target_acquire_class",default="
 parser.add_option("--target_acquire_count",dest="target_acquire_count",default="400",help="Number of Images to acquire")
 parser.add_option("--target_acquire_rate",dest="target_acquire_rate",default="10",help="Number of Images to acquire per second")
 parser.add_option("--script",dest="script",default='Script6',help="Image Preprocessing Script")
-parser.add_option("--use_joystick",dest="use_joystick",default='False',help="True or False")
+parser.add_option("--use_joystick",dest="use_joystick",default='True',help="True or False")
 parser.add_option("--debug",dest="debug",default='True',help="True or False")
-parser.add_option("--matlabserver",dest="matlabserver",default='True',help="True or False")
+parser.add_option("--matlabserver",dest="matlabserver",default='False',help="True or False")
 parser.add_option("--simserver",dest="simserver",default='False',help='True or False')
 
 
