@@ -3,12 +3,12 @@ close all
 clear variables
 clc
 addpath 'matpcl';
-pcl_folder = 'pointclouds1';
+pcl_folder = 'pointclouds2';
 pcl_files = dir(pcl_folder);
 pcl_files(1) = [];
 pcl_files(1) = [];
-clouds = [];
+cloud = [];
 for i = 1:length(pcl_files)
-    clouds = [clouds loadpcd([pcl_folder '/' pcl_files(i).name])];
+    cloud = [cloud loadpcd([pcl_folder '/' pcl_files(i).name])];
 end
-scatter3(clouds(1,:),clouds(2,:),clouds(3,:))
+scatter3(cloud(1,:),cloud(2,:),cloud(3,:))
