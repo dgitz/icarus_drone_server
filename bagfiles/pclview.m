@@ -3,7 +3,7 @@ close all
 clear variables
 clc
 addpath 'matpcl';
-pcl_folder = 'pointclouds2';
+pcl_folder = 'pointclouds4';
 pcl_files = dir(pcl_folder);
 pcl_files(1) = [];
 pcl_files(1) = [];

@@ -58,7 +58,7 @@ parser.add_option("--target_acquire_class",dest="target_acquire_class",default="
 parser.add_option("--target_acquire_count",dest="target_acquire_count",default="400",help="Number of Images to acquire")
 parser.add_option("--target_acquire_rate",dest="target_acquire_rate",default="10",help="Number of Images to acquire per second")
 parser.add_option("--script",dest="script",default='Script6',help="Image Preprocessing Script")
-parser.add_option("--use_joystick",dest="use_joystick",default='True',help="True or False")
+parser.add_option("--control",dest="control",default='Keyboard',help="Keyboard,Joystick,None")
 parser.add_option("--debug",dest="debug",default='True',help="True or False")
 parser.add_option("--matlabserver",dest="matlabserver",default='False',help="True or False")
 parser.add_option("--simserver",dest="simserver",default='False',help='True or False')
@@ -91,10 +91,7 @@ if opts.nav == "True":
 	nav_enabled = True
 else:
 	nav_enabled = False
-if opts.use_joystick == "True":
-	use_joystick = True
-else:
-	use_joystick = False
+control_method = opts.control
 if opts.debug == "True":
 	DEBUG = True
 else:
@@ -173,14 +170,15 @@ class ros_service:
 				elif xmitmode == 'UDP':
 					matlabserver_socket = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
 					matlabserver_initialized = True
-			if use_joystick:
+			if control_method == 'Joystick':
 				self.joy = rospy.Subscriber('joy', Joy, self.joyCallback)
 				self.teleopcmd_pub = rospy.Publisher('cmd_vel',Twist)
 				self.teleoptakeoff_pub = rospy.Publisher('/ardrone/takeoff',Empty)
 				self.teleopland_pub = rospy.Publisher('/ardrone/land',Empty)
-				#self.teleopreset_pub = rospy.Publisher('/ardrone/reset',Empty)
-		#elif mode == 'Test': #For Development/debugging only
 			
+		#elif mode == 'Test': #For Development/debugging only
+
+		
 	def joyCallback(self, joy):
 		self.joyaxis_pitch = 1
 		self.joyaxis_roll = 0
@@ -297,6 +295,7 @@ def mainloop():
 	global pose_yaw
 	global target_x
 	global target_y
+	global target_yaw
 	global target_class
 	global last_target_x
 	global last_target_y
@@ -336,8 +335,8 @@ def mainloop():
 	curtime = starttime
 	user_command = "q"
 	#device_mc.changemode(mavlink.MAV_MODE_PREFLIGHT)		
-	print "Waiting 10 seconds..."
-	rospy.sleep(10)
+	print "Waiting 3 seconds..."
+	rospy.sleep(3)
 	gInitComplete = True
 	print 'Initialization Complete.  Starting Mode: {}'.format(mode)
 	#device_mc.changemode(mavlink.MAV_MODE_MANUAL_DISARMED)	
@@ -348,7 +347,11 @@ def mainloop():
 	#rospy.sleep(5) #Wait 15 seconds to allow all devices to powerup
 	
 	#device_mc.changemode(mavlink.MAV_MODE_MANUAL_DISARMED)
-
+	if control_method == 'Keyboard':
+				cv2.namedWindow("Control",1)
+				teleopcmd_pub = rospy.Publisher('cmd_vel',Twist)
+				teleoptakeoff_pub = rospy.Publisher('/ardrone/takeoff',Empty)
+				teleopland_pub = rospy.Publisher('/ardrone/land',Empty)
 	while not (rospy.is_shutdown()):
 		#time.sleep(1)
 		#tempstr = 'image{}.png'.format(imagenum)
@@ -370,8 +373,29 @@ def mainloop():
 			if matlabserver_initialized:
 				icarus_msghandler(matlabserver_socket)
 				print 'Class: {} X:{} Y: {}'.format(target_class,target_x,target_y)
+			if control_method == 'Keyboard':
+				img = np.empty((640,360))
+				cv2.imshow('User Control',img)
+				mykey = cv2.waitKey(1) & 0xFF
+				if mykey == ord('w'):
+					target_y = target_y + 1
+				elif mykey == ord('s'):
+					target_y = target_y - 1
+				elif mykey == ord('a'):
+					target_yaw = target_yaw - 1
+				elif mykey == ord('d'):
+					target_yaw = target_yaw + 1
+				#print 'Y: {} Angle: {}'.format(target_y,target_yaw)
+				twist = Twist()		
+				twist.linear.x = 0
+				twist.linear.y = target_y
+				twist.linear.z = 0
+				twist.angular.z = target_yaw
+				teleopcmd_pub.publish(twist)
+				
 			
 	print 'Exiting Program'
+	cv2.destroyAllWindows()
 	if mode == 'Execute':
 		if matlabserver_initialized:
 			matlabserver_socket.close()
@@ -448,6 +472,10 @@ def initvariables():
 	global imagenum
 	global target_x
 	global target_y
+	global target_yaw
+	global target_z
+	global target_pitch
+	global target_roll
 	global target_class
 	global last_target_x
 	global last_target_y
@@ -460,8 +488,12 @@ def initvariables():
 	gInitComplete = False
 	last_target_x = 0
 	last_target_y = 0
-	target_x = -1
-	target_y = -1
+	target_x = 0
+	target_y = 0
+	target_z = 0
+	target_yaw = 0
+	target_pitch = 0
+	target_roll = 0
 	target_class = 'None'
 	imagenum = 0
 	front_image_vector = []
