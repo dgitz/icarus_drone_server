@@ -4,7 +4,7 @@ import roslib
 roslib.load_manifest('icarus_drone_server')
 packagepath = roslib.packages.get_pkg_dir('icarus_drone_server')
 import rospy
-from std_msgs.msg import String, Header
+from std_msgs.msg import String, Header,Float32
 from sensor_msgs.msg import NavSatFix, NavSatStatus, Imu,CameraInfo
 from icarus_drone_server.msg import *
 
@@ -58,7 +58,7 @@ parser.add_option("--target_acquire_class",dest="target_acquire_class",default="
 parser.add_option("--target_acquire_count",dest="target_acquire_count",default="400",help="Number of Images to acquire")
 parser.add_option("--target_acquire_rate",dest="target_acquire_rate",default="10",help="Number of Images to acquire per second")
 parser.add_option("--script",dest="script",default='Script6',help="Image Preprocessing Script")
-parser.add_option("--control",dest="control",default='Keyboard',help="Keyboard,Joystick,None")
+parser.add_option("--control",dest="control",default='Joystick',help="Keyboard,Joystick,None")
 parser.add_option("--debug",dest="debug",default='True',help="True or False")
 parser.add_option("--matlabserver",dest="matlabserver",default='False',help="True or False")
 parser.add_option("--simserver",dest="simserver",default='False',help='True or False')
@@ -173,6 +173,7 @@ class ros_service:
 			if control_method == 'Joystick':
 				self.joy = rospy.Subscriber('joy', Joy, self.joyCallback)
 				self.teleopcmd_pub = rospy.Publisher('cmd_vel',Twist)
+				self.twist_yaw_pub = rospy.Publisher('twist_yaw',Float32)
 				self.teleoptakeoff_pub = rospy.Publisher('/ardrone/takeoff',Empty)
 				self.teleopland_pub = rospy.Publisher('/ardrone/land',Empty)
 			
@@ -187,6 +188,7 @@ class ros_service:
 		self.joybutton_takeoff = 0
 		self.joybutton_land = 2
 		twist = Twist()
+		#pdb.set_trace()
 		if joy.buttons[self.joybutton_takeoff]:
 			if DEBUG:print 'Taking Off'
 			self.teleoptakeoff_pub.publish(Empty())
@@ -199,6 +201,7 @@ class ros_service:
 		twist.linear.z = joy.axes[self.joyaxis_throttle]
 		twist.angular.z = joy.axes[self.joyaxis_yaw]/2
 		self.teleopcmd_pub.publish(twist)
+		self.twist_yaw_pub.publish(twist.angular.z)
 		
 	def cb_newfront_img(self,data):
 		global imagenum
@@ -349,7 +352,8 @@ def mainloop():
 	#device_mc.changemode(mavlink.MAV_MODE_MANUAL_DISARMED)
 	if control_method == 'Keyboard':
 				cv2.namedWindow("Control",1)
-				teleopcmd_pub = rospy.Publisher('cmd_vel',Twist)
+				#teleopcmd_pub = rospy.Publisher('cmd_vel',Twist)
+				teleop_tf_pub = tf.TransformBroadcaster()
 				teleoptakeoff_pub = rospy.Publisher('/ardrone/takeoff',Empty)
 				teleopland_pub = rospy.Publisher('/ardrone/land',Empty)
 	while not (rospy.is_shutdown()):
@@ -386,12 +390,7 @@ def mainloop():
 				elif mykey == ord('d'):
 					target_yaw = target_yaw + 1
 				#print 'Y: {} Angle: {}'.format(target_y,target_yaw)
-				twist = Twist()		
-				twist.linear.x = 0
-				twist.linear.y = target_y
-				twist.linear.z = 0
-				twist.angular.z = target_yaw
-				teleopcmd_pub.publish(twist)
+				teleop_tf_pub.sendTransform((0,target_y,0),tf.transformations.quaternion_from_euler(0,0,target_yaw),rospy.Time.now(),"sim_drone","world")
 				
 			
 	print 'Exiting Program'
