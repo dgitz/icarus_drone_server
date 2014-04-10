@@ -144,7 +144,8 @@ class ros_service:
 		global matlabserver_enabled
 		global matlabserver_socket
 		global cmd_register
-		global cmd_yaw_pub
+		global cmd_roll_pub
+		global teleopcmd_pub
 		if opts.matlabserver == 'True':
 			matlabserver_enabled = True
 			matlabserver_initialized = False
@@ -174,10 +175,10 @@ class ros_service:
 					matlabserver_initialized = True
 			if control_method == 'Joystick':
 				self.joy = rospy.Subscriber('joy', Joy, self.joyCallback)
-				self.teleopcmd_pub = rospy.Publisher('cmd_vel',Twist)
-				cmd_yaw_pub = rospy.Publisher('cmd_yaw',Float32)
+				teleopcmd_pub = rospy.Publisher('cmd_vel',Twist)
+				self.cmd_yaw_pub = rospy.Publisher('cmd_yaw',Float32)
 				self.cmd_pitch_pub = rospy.Publisher('cmd_pitch',Float32)
-				self.cmd_roll_pub = rospy.Publisher('cmd_roll',Float32)
+				cmd_roll_pub = rospy.Publisher('cmd_roll',Float32)
 				self.cmd_throttle_pub = rospy.Publisher('cmd_throttle',Float32)
 				self.teleoptakeoff_pub = rospy.Publisher('/ardrone/takeoff',Empty)
 				self.teleopland_pub = rospy.Publisher('/ardrone/land',Empty)
@@ -188,31 +189,41 @@ class ros_service:
 	def joyCallback(self, joy):
 		global cmd_yaw_pub
 		global slam_mode
+		global flight_mode
+		global cmd_twist
+		global teleopcmd_pub
 		self.joyaxis_pitch = 1
 		self.joyaxis_roll = 0
 		self.joyaxis_throttle = 3
 		self.joyaxis_yaw = 2
 		self.joybutton_takeoff = 0
 		self.joybutton_land = 2
-		twist = Twist()
+		
 		#pdb.set_trace()
 		if joy.buttons[self.joybutton_takeoff]:
-			if DEBUG:print 'Taking Off'
 			self.teleoptakeoff_pub.publish(Empty())
+			flight_mode = 'flight_running'
+			slam_mode = 'slam_init'
+			if DEBUG:print 'Taking Off'
+			
 		if joy.buttons[self.joybutton_land]:
+			flight_mode = 'flight_landed'
+			slam_mode = 'slam_disabled'
 			if DEBUG:print 'Landing'
 			self.teleopland_pub.publish(Empty())
 		if DEBUG:print 'P: {:.2f} R: {:.2f} Y: {:.2f} T: {:.2f}'.format(joy.axes[self.joyaxis_pitch],joy.axes[self.joyaxis_roll],joy.axes[self.joyaxis_yaw],joy.axes[self.joyaxis_throttle])
-		if slam_mode == 'Running':
-			twist.linear.x = joy.axes[self.joyaxis_pitch]
-			twist.linear.y = joy.axes[self.joyaxis_roll]
-			twist.linear.z = joy.axes[self.joyaxis_throttle]
-			twist.angular.z = joy.axes[self.joyaxis_yaw]/2
-			self.teleopcmd_pub.publish(twist)
-			cmd_yaw_pub.publish(joy.axes[self.joyaxis_yaw])
-			self.cmd_roll_pub.publish(joy.axes[self.joyaxis_roll])
+		if slam_mode == 'slam_running' or slam_mode == 'slam_disabled':
+			cmd_twist.linear.x = joy.axes[self.joyaxis_pitch]
+			cmd_twist.linear.y = joy.axes[self.joyaxis_roll]
+			cmd_twist.linear.z = joy.axes[self.joyaxis_throttle]
+			cmd_twist.angular.z = joy.axes[self.joyaxis_yaw]/2
+			teleopcmd_pub.publish(cmd_twist)
+			self.cmd_yaw_pub.publish(joy.axes[self.joyaxis_yaw])
+			cmd_roll_pub.publish(joy.axes[self.joyaxis_roll])
 			self.cmd_pitch_pub.publish(joy.axes[self.joyaxis_pitch])
 			self.cmd_throttle_pub.publish(joy.axes[self.joyaxis_throttle])
+			
+			
 		
 	def cb_newfront_img(self,data):
 		global imagenum
@@ -319,8 +330,12 @@ def mainloop():
 	global matlabserver_socket
 	global slam_mode
 	global cmd_register
-	global cmd_yaw_pub
-	slam_mode = "Init"
+	global cmd_roll_pub
+	global flight_mode
+	global cmd_twist
+	global teleopcmd_pub
+	slam_mode = "slam_init"
+	flight_mode = 'flight_landed'
 	my_MissionItems = []
 	#device_gcs.display()
 	first_attitude_packet = True
@@ -357,9 +372,10 @@ def mainloop():
 	rospy.sleep(3)
 	gInitComplete = True
 	slam_reg_time = 0
-	slam_reg_time_limit = 50 #Loops to complete the registration process
-	slam_run_time_limit = 30000 #Loops to wait between SLAM re-registration
+	slam_reg_time_limit = 200 #Loops to complete the registration process
+	slam_run_time_limit = 3000 #Loops to wait between SLAM re-registration
 	slam_run_time = 0
+	slam_reg_rollrate = 1.5
 	
 	print 'Initialization Complete.  Starting Mode: {}'.format(mode)
 	#device_mc.changemode(mavlink.MAV_MODE_MANUAL_DISARMED)	
@@ -370,10 +386,11 @@ def mainloop():
 	#rospy.sleep(5) #Wait 15 seconds to allow all devices to powerup
 	
 	#device_mc.changemode(mavlink.MAV_MODE_MANUAL_DISARMED)
+	teleop_tf_pub = tf.TransformBroadcaster()
 	if control_method == 'Keyboard':
 				cv2.namedWindow("Control",1)
 				#teleopcmd_pub = rospy.Publisher('cmd_vel',Twist)
-				teleop_tf_pub = tf.TransformBroadcaster()
+				
 				teleoptakeoff_pub = rospy.Publisher('/ardrone/takeoff',Empty)
 				teleopland_pub = rospy.Publisher('/ardrone/land',Empty)
 	while not (rospy.is_shutdown()):
@@ -412,32 +429,40 @@ def mainloop():
 				elif mykey == ord('d'):
 					target_yaw = target_yaw + 1
 				#print 'Y: {} Angle: {}'.format(target_y,target_yaw)
-				#teleop_tf_pub.sendTransform((0,target_y,0),tf.transformations.quaternion_from_euler(0,0,target_yaw),rospy.Time.now(),"sim_drone","world")
+				
 		
 			
 			
-			if slam_mode == 'Init':
+			if slam_mode == 'slam_init':
 				print 'Starting Registration Process'
-				slam_mode = 'Registering'
+				slam_mode = 'slam_registering'
 				cmd_register.publish(Empty())
 				slam_reg_time = 0
 				#Code for computing and modifying the new pose state
-			elif slam_mode == 'Registering':
+			elif slam_mode == 'slam_registering':
 				#pdb.set_trace()
-				cmd_yaw_pub.publish(1.0)
+				cmd_roll_pub.publish(slam_reg_rollrate)
 				slam_reg_time = slam_reg_time+1
 				
+				cmd_twist.angular.z = 0
+				cmd_twist.linear.x = 0
+				cmd_twist.linear.y = slam_reg_rollrate
+				cmd_twist.linear.z = 0
 				if slam_reg_time > slam_reg_time_limit:
 					print 'Registration Done'
-					cmd_yaw_pub.publish(0.0)					
-					slam_mode = 'Running'
+					cmd_roll_pub.publish(0.0)
+					
+					cmd_twist.linear.y = 0	
+									
+					slam_mode = 'slam_running'
 					slam_run_time = 0
-			elif slam_mode == 'Running':
+				teleopcmd_pub.publish(cmd_twist)
+			elif slam_mode == 'slam_running':
 				
 				slam_run_time = slam_run_time + 1
-				
+				#teleop_tf_pub.sendTransform((0,0,0),tf.transformations.quaternion_from_euler(0,0,0),rospy.Time.now(),"cam_front","base_link")
 				if slam_run_time > slam_run_time_limit:
-					slam_mode = 'Init'
+					slam_mode = 'slam_init'
 				
 			
 	print 'Exiting Program'
@@ -529,10 +554,13 @@ def initvariables():
 	global matlabserver_initialized
 	global matlabserver_enabled
 	global matlabserver_socket
-	global slam_mode #Init Registering Running
+	global slam_mode #slam_init slam_registering slam_running slam_disabled
 	global cmd_register
-	global cmd_yaw_pub
-	slam_mode = "Init"
+	global cmd_roll_pub
+	global flight_mode #flight_running flight_landed
+	global cmd_twist
+	global teleopcmd_pub
+	cmd_twist = Twist()
 	matlabserver_initialized = False
 	matlabserver_enabled = False
 	gInitComplete = False
