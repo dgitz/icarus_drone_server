@@ -27,6 +27,7 @@ import shutil
 import socket
 import numpy as np
 import rosbag
+from scipy import ndimage
 from geometry_msgs.msg import Twist
 np.set_printoptions(threshold=np.nan)
 
@@ -35,7 +36,7 @@ if xmitmode == 'UDP':
 	matlabserver_ip = '127.0.0.1'
 	matlabserver_port = 5006
 elif xmitmode == 'TCP':
-	matlabserver_ip = '192.168.0.102'
+	matlabserver_ip = '192.168.0.104'
 	matlabserver_port = 5005
 
 #import rgbdslam.msg
@@ -52,7 +53,7 @@ parser = OptionParser("drone_server.py [options]")
 #parser.add_option("--mode",dest="mode",default="None",help="net,slam,None")
 parser.add_option("--nav",dest="nav",default=False)
 parser.add_option("--slam",dest="slam",default=False)
-parser.add_option("--mode",dest="mode",default="Execute",help="Acquire,Train,Test,Execute,Test")
+parser.add_option("--mode",dest="mode",default="Acquire",help="Acquire,Train,Test,Execute,Test")
 parser.add_option("--target_acquire_mode",dest="target_acquire_mode",default="Live",help="Live,Simulated")
 parser.add_option("--target_acquire_class",dest="target_acquire_class",default="None",help="Name of Target Class")
 parser.add_option("--target_acquire_count",dest="target_acquire_count",default="400",help="Number of Images to acquire")
@@ -60,7 +61,7 @@ parser.add_option("--target_acquire_rate",dest="target_acquire_rate",default="10
 parser.add_option("--script",dest="script",default='Script6',help="Image Preprocessing Script")
 parser.add_option("--control",dest="control",default='Joystick',help="Keyboard,Joystick,None")
 parser.add_option("--debug",dest="debug",default='True',help="True or False")
-parser.add_option("--matlabserver",dest="matlabserver",default='False',help="True or False")
+parser.add_option("--matlabserver",dest="matlabserver",default='True',help="True or False")
 parser.add_option("--simserver",dest="simserver",default='False',help='True or False')
 
 
@@ -82,7 +83,7 @@ parser.add_option("--simserver",dest="simserver",default='False',help='True or F
 
 
 mode = opts.mode
-resize = 5
+resize = 2
 if opts.slam == "True":
 	slam_enabled = True
 else:
@@ -101,8 +102,12 @@ if opts.simserver == 'True':
 	simserver_enabled = True
 else:
 	simserver_enabled = False
-
-
+if resize == 2:
+	radius = 89
+	circular_kernel = np.zeros((2*radius+1,2*radius+1))
+	y,x = np.ogrid[-radius:radius+1,-radius:radius+1]
+	circular_mask = x**2 + y**2 <= radius**2
+	circular_kernel[circular_mask] = 256
 if mode == "Acquire":
 	target_acquire_mode = opts.target_acquire_mode
 	if target_acquire_mode == "Live":
@@ -153,12 +158,14 @@ class ros_service:
 			matlabserver_enabled = False
 			matlabserver_initialized = False
 		if mode == "Acquire":
-			cv2.namedWindow("Gray",1)
+			cv2.namedWindow("Rotated Image",1)
 			self.bridge = CvBridge()
 			self.image_sub = rospy.Subscriber("/ardrone/front/image_raw",Image,self.callbackCameraAcquire)
+			self.navdata_sub = rospy.Subscriber("/ardrone/navdata",Navdata,self.cb_navdata)
 			print 'Starting Image Acquisition'
 		elif mode == "Execute":	
-			
+			cv2.namedWindow("Rotated Image",1)
+			self.navdata_sub = rospy.Subscriber("/ardrone/navdata",Navdata,self.cb_navdata)
 			self.bridge = CvBridge()
 			self.poseestimate_sub = rospy.Subscriber("/ardrone/predictedPose",filter_state,self.cb_pose_estimate)
 			self.frontimg_sub = rospy.Subscriber("/ardrone/front/image_raw",Image,self.cb_newfront_img)
@@ -166,7 +173,7 @@ class ros_service:
 			if matlabserver_enabled:
 				if xmitmode == 'TCP':
 					matlabserver_socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
-					abcd = matlabserver_socket.connect((matlabserver_ip,matlabserver_port))
+					matlabserver = matlabserver_socket.connect((matlabserver_ip,matlabserver_port))
 					
 					matlabserver_initialized = True
 					
@@ -185,7 +192,13 @@ class ros_service:
 			
 		#elif mode == 'Test': #For Development/debugging only
 
-		
+	def cb_navdata(self,data):
+		global pose_roll
+		global pose_pitch
+		global pose_yaw
+		pose_roll = data.rotX
+		pose_pitch = data.rotY
+		pose_yaw = data.rotZ
 	def joyCallback(self, joy):
 		global cmd_yaw_pub
 		global slam_mode
@@ -230,16 +243,36 @@ class ros_service:
 		global matlabserver_initialized
 		global matlabserver_enabled
 		global matlabserver_socket
+		global pose_roll
 		color_im = self.bridge.imgmsg_to_cv(data)
 		color_image = np.array(color_im)
+		
+		
 		new_image = cv2.cvtColor(color_image,cv2.COLOR_BGR2HSV)
 		h,s,v = cv2.split(new_image)
 		gray_image = v
 		(height,width) = gray_image.shape
 		gray_image = cv2.resize(gray_image,(width/resize,height/resize))
+		if resize == 2:
+			xcenter = 160
+			ycenter = 90		
+			cropped_image = gray_image[0:179,(xcenter-89):(xcenter+90)]
+		elif resize == 1:
+			xcenter = 320
+			ycenter = 180		
+			cropped_image = gray_image[0:359,(xcenter-179):(xcenter+180)]
+		
+				
+		cropped_image = cropped_image*circular_kernel
+		cropped_image = cropped_image/256
+		cropped_image = np.uint8(cropped_image)
+		rotated_image = rotateImage(cropped_image, -pose_roll)
+
+		
+
 		
 		myheader = '$CAM,DFV'
-		l = '{:08d}'.format(height*width/(resize*resize))
+		l = '{:08d}'.format(179*179)
 		
 
 		#pdb.set_trace()
@@ -254,9 +287,9 @@ class ros_service:
 			elif xmitmode == 'TCP':
 				matlabserver_socket.send(myheader)
 				matlabserver_socket.send(l)
-				matlabserver_socket.sendall(gray_image)
-				
-		#time.sleep(.25)
+				matlabserver_socket.sendall(rotated_image)
+		cv2.imshow("Rotated Image",rotated_image)		
+		cv2.waitKey(1)
 	def cb_pose_estimate(self,data):
 		global pose_x
 		global pose_y
@@ -264,9 +297,9 @@ class ros_service:
 		global pose_roll
 		global pose_yaw
 		global pose_pitch
-		pose_roll = data.roll
-		pose_pitch = data.pitch
-		pose_yaw = data.yaw
+		#pose_roll = data.roll
+		#pose_pitch = data.pitch
+		#pose_yaw = data.yaw
 		pose_x = data.x
 		pose_y = data.y
 		pose_z = data.z
@@ -274,6 +307,7 @@ class ros_service:
 	def callbackCameraAcquire(self,data):
 		global imagenum
 		global gInitComplete
+		global pose_roll
 		if gInitComplete:
 			try:
 				if imagenum < target_acquire_count:
@@ -285,13 +319,21 @@ class ros_service:
 					color_image = np.array(color_im)
 					new_image = cv2.cvtColor(color_image, cv2.COLOR_BGR2HSV)
 					h,s,v = cv2.split(new_image)
-					cv2.imshow("Gray",v)
+					
 					gray_image = v
 					(height,width) = gray_image.shape	
 					gray_image = cv2.resize(gray_image,(width/resize,height/resize))
+					xcenter = 160
+					ycenter = 90		
+					cropped_image = gray_image[0:179,(xcenter-89):(xcenter+90)]
+					cropped_image = cropped_image*circular_kernel
+					cropped_image = cropped_image/256
+					cropped_image = np.uint8(cropped_image)
 					
+					rotated_image = rotateImage(cropped_image, -pose_roll)
+					cv2.imshow("Rotated",rotated_image)
 					filename = '{}{}'.format(target_acquire_classdir,tempstr)
-					cv2.imwrite(filename,gray_image)
+					cv2.imwrite(filename,rotated_image)
 					print 'Image: {}/{} Completed.'.format(imagenum,target_acquire_count)
 					cv2.waitKey(1)
 				else:
@@ -629,6 +671,10 @@ def datetime2gpsdatetime(item):
   a[5] = item.year-2000
   return a
 
+def rotateImage(image, angle):
+    center=tuple(np.array(image.shape[0:2])/2)
+    rot_mat = cv2.getRotationMatrix2D(center,angle,1.0)
+    return cv2.warpAffine(image, rot_mat, image.shape[0:2],flags=cv2.INTER_LINEAR)
 
 def calcchecksum(item):
 	s = 0

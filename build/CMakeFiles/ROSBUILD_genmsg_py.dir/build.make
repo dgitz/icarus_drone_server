@@ -44,35 +44,83 @@ include CMakeFiles/ROSBUILD_genmsg_py.dir/progress.make
 
 CMakeFiles/ROSBUILD_genmsg_py: ../src/icarus_drone_server/msg/__init__.py
 
+../src/icarus_drone_server/msg/__init__.py: ../src/icarus_drone_server/msg/_Navdata.py
 ../src/icarus_drone_server/msg/__init__.py: ../src/icarus_drone_server/msg/_Num.py
 ../src/icarus_drone_server/msg/__init__.py: ../src/icarus_drone_server/msg/_filter_state.py
 	$(CMAKE_COMMAND) -E cmake_progress_report /home/dgitz/fuerte_workspace/sandbox/icarus_drone_server/build/CMakeFiles $(CMAKE_PROGRESS_1)
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold "Generating ../src/icarus_drone_server/msg/__init__.py"
-	/opt/ros/fuerte/share/rospy/rosbuild/scripts/genmsg_py.py --initpy /home/dgitz/fuerte_workspace/sandbox/icarus_drone_server/msg/Num.msg /home/dgitz/fuerte_workspace/sandbox/icarus_drone_server/msg/filter_state.msg
+	/opt/ros/fuerte/share/rospy/rosbuild/scripts/genmsg_py.py --initpy /home/dgitz/fuerte_workspace/sandbox/icarus_drone_server/msg/Navdata.msg /home/dgitz/fuerte_workspace/sandbox/icarus_drone_server/msg/Num.msg /home/dgitz/fuerte_workspace/sandbox/icarus_drone_server/msg/filter_state.msg
+
+../src/icarus_drone_server/msg/_Navdata.py: ../msg/Navdata.msg
+../src/icarus_drone_server/msg/_Navdata.py: /opt/ros/fuerte/share/rospy/rosbuild/scripts/genmsg_py.py
+../src/icarus_drone_server/msg/_Navdata.py: /opt/ros/fuerte/share/roslib/bin/gendeps
+../src/icarus_drone_server/msg/_Navdata.py: /opt/ros/fuerte/share/std_msgs/msg/Header.msg
+../src/icarus_drone_server/msg/_Navdata.py: ../manifest.xml
+../src/icarus_drone_server/msg/_Navdata.py: /opt/ros/fuerte/share/roslang/manifest.xml
+../src/icarus_drone_server/msg/_Navdata.py: /opt/ros/fuerte/share/roscpp/manifest.xml
+../src/icarus_drone_server/msg/_Navdata.py: /opt/ros/fuerte/share/geometry_msgs/manifest.xml
+../src/icarus_drone_server/msg/_Navdata.py: /opt/ros/fuerte/share/sensor_msgs/manifest.xml
+../src/icarus_drone_server/msg/_Navdata.py: /opt/ros/fuerte/share/ros/core/rosbuild/manifest.xml
+../src/icarus_drone_server/msg/_Navdata.py: /opt/ros/fuerte/share/roslib/manifest.xml
+../src/icarus_drone_server/msg/_Navdata.py: /opt/ros/fuerte/share/rosconsole/manifest.xml
+../src/icarus_drone_server/msg/_Navdata.py: /opt/ros/fuerte/stacks/pluginlib/manifest.xml
+../src/icarus_drone_server/msg/_Navdata.py: /opt/ros/fuerte/share/message_filters/manifest.xml
+../src/icarus_drone_server/msg/_Navdata.py: /opt/ros/fuerte/stacks/image_common/image_transport/manifest.xml
+../src/icarus_drone_server/msg/_Navdata.py: /opt/ros/fuerte/share/std_srvs/manifest.xml
+../src/icarus_drone_server/msg/_Navdata.py: /opt/ros/fuerte/stacks/bullet/manifest.xml
+../src/icarus_drone_server/msg/_Navdata.py: /opt/ros/fuerte/stacks/geometry/angles/manifest.xml
+../src/icarus_drone_server/msg/_Navdata.py: /opt/ros/fuerte/share/rospy/manifest.xml
+../src/icarus_drone_server/msg/_Navdata.py: /opt/ros/fuerte/share/rostest/manifest.xml
+../src/icarus_drone_server/msg/_Navdata.py: /opt/ros/fuerte/share/roswtf/manifest.xml
+../src/icarus_drone_server/msg/_Navdata.py: /opt/ros/fuerte/stacks/geometry/tf/manifest.xml
+../src/icarus_drone_server/msg/_Navdata.py: /opt/ros/fuerte/stacks/common_rosdeps/manifest.xml
+../src/icarus_drone_server/msg/_Navdata.py: /opt/ros/fuerte/stacks/image_common/camera_calibration_parsers/manifest.xml
+../src/icarus_drone_server/msg/_Navdata.py: /opt/ros/fuerte/stacks/image_common/camera_info_manager/manifest.xml
+../src/icarus_drone_server/msg/_Navdata.py: /home/dgitz/fuerte_workspace/sandbox/ardrone_autonomy/manifest.xml
+../src/icarus_drone_server/msg/_Navdata.py: /opt/ros/fuerte/share/std_msgs/manifest.xml
+../src/icarus_drone_server/msg/_Navdata.py: /opt/ros/fuerte/stacks/vision_opencv/opencv2/manifest.xml
+../src/icarus_drone_server/msg/_Navdata.py: /opt/ros/fuerte/stacks/vision_opencv/cv_bridge/manifest.xml
+../src/icarus_drone_server/msg/_Navdata.py: /opt/ros/fuerte/stacks/geometry/tf/msg_gen/generated
+../src/icarus_drone_server/msg/_Navdata.py: /opt/ros/fuerte/stacks/geometry/tf/srv_gen/generated
+../src/icarus_drone_server/msg/_Navdata.py: /home/dgitz/fuerte_workspace/sandbox/ardrone_autonomy/msg_gen/generated
+../src/icarus_drone_server/msg/_Navdata.py: /home/dgitz/fuerte_workspace/sandbox/ardrone_autonomy/srv_gen/generated
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/dgitz/fuerte_workspace/sandbox/icarus_drone_server/build/CMakeFiles $(CMAKE_PROGRESS_2)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold "Generating ../src/icarus_drone_server/msg/_Navdata.py"
+	/opt/ros/fuerte/share/rospy/rosbuild/scripts/genmsg_py.py --noinitpy /home/dgitz/fuerte_workspace/sandbox/icarus_drone_server/msg/Navdata.msg
 
 ../src/icarus_drone_server/msg/_Num.py: ../msg/Num.msg
 ../src/icarus_drone_server/msg/_Num.py: /opt/ros/fuerte/share/rospy/rosbuild/scripts/genmsg_py.py
 ../src/icarus_drone_server/msg/_Num.py: /opt/ros/fuerte/share/roslib/bin/gendeps
 ../src/icarus_drone_server/msg/_Num.py: ../manifest.xml
-../src/icarus_drone_server/msg/_Num.py: /opt/ros/fuerte/share/std_msgs/manifest.xml
 ../src/icarus_drone_server/msg/_Num.py: /opt/ros/fuerte/share/roslang/manifest.xml
-../src/icarus_drone_server/msg/_Num.py: /opt/ros/fuerte/share/rospy/manifest.xml
 ../src/icarus_drone_server/msg/_Num.py: /opt/ros/fuerte/share/roscpp/manifest.xml
 ../src/icarus_drone_server/msg/_Num.py: /opt/ros/fuerte/share/geometry_msgs/manifest.xml
 ../src/icarus_drone_server/msg/_Num.py: /opt/ros/fuerte/share/sensor_msgs/manifest.xml
-../src/icarus_drone_server/msg/_Num.py: /opt/ros/fuerte/stacks/vision_opencv/opencv2/manifest.xml
-../src/icarus_drone_server/msg/_Num.py: /opt/ros/fuerte/stacks/vision_opencv/cv_bridge/manifest.xml
-../src/icarus_drone_server/msg/_Num.py: /opt/ros/fuerte/stacks/bullet/manifest.xml
+../src/icarus_drone_server/msg/_Num.py: /opt/ros/fuerte/share/ros/core/rosbuild/manifest.xml
+../src/icarus_drone_server/msg/_Num.py: /opt/ros/fuerte/share/roslib/manifest.xml
 ../src/icarus_drone_server/msg/_Num.py: /opt/ros/fuerte/share/rosconsole/manifest.xml
+../src/icarus_drone_server/msg/_Num.py: /opt/ros/fuerte/stacks/pluginlib/manifest.xml
+../src/icarus_drone_server/msg/_Num.py: /opt/ros/fuerte/share/message_filters/manifest.xml
+../src/icarus_drone_server/msg/_Num.py: /opt/ros/fuerte/stacks/image_common/image_transport/manifest.xml
+../src/icarus_drone_server/msg/_Num.py: /opt/ros/fuerte/share/std_srvs/manifest.xml
+../src/icarus_drone_server/msg/_Num.py: /opt/ros/fuerte/stacks/bullet/manifest.xml
 ../src/icarus_drone_server/msg/_Num.py: /opt/ros/fuerte/stacks/geometry/angles/manifest.xml
+../src/icarus_drone_server/msg/_Num.py: /opt/ros/fuerte/share/rospy/manifest.xml
 ../src/icarus_drone_server/msg/_Num.py: /opt/ros/fuerte/share/rostest/manifest.xml
 ../src/icarus_drone_server/msg/_Num.py: /opt/ros/fuerte/share/roswtf/manifest.xml
-../src/icarus_drone_server/msg/_Num.py: /opt/ros/fuerte/share/message_filters/manifest.xml
 ../src/icarus_drone_server/msg/_Num.py: /opt/ros/fuerte/stacks/geometry/tf/manifest.xml
-../src/icarus_drone_server/msg/_Num.py: /opt/ros/fuerte/share/roslib/manifest.xml
+../src/icarus_drone_server/msg/_Num.py: /opt/ros/fuerte/stacks/common_rosdeps/manifest.xml
+../src/icarus_drone_server/msg/_Num.py: /opt/ros/fuerte/stacks/image_common/camera_calibration_parsers/manifest.xml
+../src/icarus_drone_server/msg/_Num.py: /opt/ros/fuerte/stacks/image_common/camera_info_manager/manifest.xml
+../src/icarus_drone_server/msg/_Num.py: /home/dgitz/fuerte_workspace/sandbox/ardrone_autonomy/manifest.xml
+../src/icarus_drone_server/msg/_Num.py: /opt/ros/fuerte/share/std_msgs/manifest.xml
+../src/icarus_drone_server/msg/_Num.py: /opt/ros/fuerte/stacks/vision_opencv/opencv2/manifest.xml
+../src/icarus_drone_server/msg/_Num.py: /opt/ros/fuerte/stacks/vision_opencv/cv_bridge/manifest.xml
 ../src/icarus_drone_server/msg/_Num.py: /opt/ros/fuerte/stacks/geometry/tf/msg_gen/generated
 ../src/icarus_drone_server/msg/_Num.py: /opt/ros/fuerte/stacks/geometry/tf/srv_gen/generated
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/dgitz/fuerte_workspace/sandbox/icarus_drone_server/build/CMakeFiles $(CMAKE_PROGRESS_2)
+../src/icarus_drone_server/msg/_Num.py: /home/dgitz/fuerte_workspace/sandbox/ardrone_autonomy/msg_gen/generated
+../src/icarus_drone_server/msg/_Num.py: /home/dgitz/fuerte_workspace/sandbox/ardrone_autonomy/srv_gen/generated
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/dgitz/fuerte_workspace/sandbox/icarus_drone_server/build/CMakeFiles $(CMAKE_PROGRESS_3)
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold "Generating ../src/icarus_drone_server/msg/_Num.py"
 	/opt/ros/fuerte/share/rospy/rosbuild/scripts/genmsg_py.py --noinitpy /home/dgitz/fuerte_workspace/sandbox/icarus_drone_server/msg/Num.msg
 
@@ -81,30 +129,41 @@ CMakeFiles/ROSBUILD_genmsg_py: ../src/icarus_drone_server/msg/__init__.py
 ../src/icarus_drone_server/msg/_filter_state.py: /opt/ros/fuerte/share/roslib/bin/gendeps
 ../src/icarus_drone_server/msg/_filter_state.py: /opt/ros/fuerte/share/std_msgs/msg/Header.msg
 ../src/icarus_drone_server/msg/_filter_state.py: ../manifest.xml
-../src/icarus_drone_server/msg/_filter_state.py: /opt/ros/fuerte/share/std_msgs/manifest.xml
 ../src/icarus_drone_server/msg/_filter_state.py: /opt/ros/fuerte/share/roslang/manifest.xml
-../src/icarus_drone_server/msg/_filter_state.py: /opt/ros/fuerte/share/rospy/manifest.xml
 ../src/icarus_drone_server/msg/_filter_state.py: /opt/ros/fuerte/share/roscpp/manifest.xml
 ../src/icarus_drone_server/msg/_filter_state.py: /opt/ros/fuerte/share/geometry_msgs/manifest.xml
 ../src/icarus_drone_server/msg/_filter_state.py: /opt/ros/fuerte/share/sensor_msgs/manifest.xml
-../src/icarus_drone_server/msg/_filter_state.py: /opt/ros/fuerte/stacks/vision_opencv/opencv2/manifest.xml
-../src/icarus_drone_server/msg/_filter_state.py: /opt/ros/fuerte/stacks/vision_opencv/cv_bridge/manifest.xml
-../src/icarus_drone_server/msg/_filter_state.py: /opt/ros/fuerte/stacks/bullet/manifest.xml
+../src/icarus_drone_server/msg/_filter_state.py: /opt/ros/fuerte/share/ros/core/rosbuild/manifest.xml
+../src/icarus_drone_server/msg/_filter_state.py: /opt/ros/fuerte/share/roslib/manifest.xml
 ../src/icarus_drone_server/msg/_filter_state.py: /opt/ros/fuerte/share/rosconsole/manifest.xml
+../src/icarus_drone_server/msg/_filter_state.py: /opt/ros/fuerte/stacks/pluginlib/manifest.xml
+../src/icarus_drone_server/msg/_filter_state.py: /opt/ros/fuerte/share/message_filters/manifest.xml
+../src/icarus_drone_server/msg/_filter_state.py: /opt/ros/fuerte/stacks/image_common/image_transport/manifest.xml
+../src/icarus_drone_server/msg/_filter_state.py: /opt/ros/fuerte/share/std_srvs/manifest.xml
+../src/icarus_drone_server/msg/_filter_state.py: /opt/ros/fuerte/stacks/bullet/manifest.xml
 ../src/icarus_drone_server/msg/_filter_state.py: /opt/ros/fuerte/stacks/geometry/angles/manifest.xml
+../src/icarus_drone_server/msg/_filter_state.py: /opt/ros/fuerte/share/rospy/manifest.xml
 ../src/icarus_drone_server/msg/_filter_state.py: /opt/ros/fuerte/share/rostest/manifest.xml
 ../src/icarus_drone_server/msg/_filter_state.py: /opt/ros/fuerte/share/roswtf/manifest.xml
-../src/icarus_drone_server/msg/_filter_state.py: /opt/ros/fuerte/share/message_filters/manifest.xml
 ../src/icarus_drone_server/msg/_filter_state.py: /opt/ros/fuerte/stacks/geometry/tf/manifest.xml
-../src/icarus_drone_server/msg/_filter_state.py: /opt/ros/fuerte/share/roslib/manifest.xml
+../src/icarus_drone_server/msg/_filter_state.py: /opt/ros/fuerte/stacks/common_rosdeps/manifest.xml
+../src/icarus_drone_server/msg/_filter_state.py: /opt/ros/fuerte/stacks/image_common/camera_calibration_parsers/manifest.xml
+../src/icarus_drone_server/msg/_filter_state.py: /opt/ros/fuerte/stacks/image_common/camera_info_manager/manifest.xml
+../src/icarus_drone_server/msg/_filter_state.py: /home/dgitz/fuerte_workspace/sandbox/ardrone_autonomy/manifest.xml
+../src/icarus_drone_server/msg/_filter_state.py: /opt/ros/fuerte/share/std_msgs/manifest.xml
+../src/icarus_drone_server/msg/_filter_state.py: /opt/ros/fuerte/stacks/vision_opencv/opencv2/manifest.xml
+../src/icarus_drone_server/msg/_filter_state.py: /opt/ros/fuerte/stacks/vision_opencv/cv_bridge/manifest.xml
 ../src/icarus_drone_server/msg/_filter_state.py: /opt/ros/fuerte/stacks/geometry/tf/msg_gen/generated
 ../src/icarus_drone_server/msg/_filter_state.py: /opt/ros/fuerte/stacks/geometry/tf/srv_gen/generated
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/dgitz/fuerte_workspace/sandbox/icarus_drone_server/build/CMakeFiles $(CMAKE_PROGRESS_3)
+../src/icarus_drone_server/msg/_filter_state.py: /home/dgitz/fuerte_workspace/sandbox/ardrone_autonomy/msg_gen/generated
+../src/icarus_drone_server/msg/_filter_state.py: /home/dgitz/fuerte_workspace/sandbox/ardrone_autonomy/srv_gen/generated
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/dgitz/fuerte_workspace/sandbox/icarus_drone_server/build/CMakeFiles $(CMAKE_PROGRESS_4)
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold "Generating ../src/icarus_drone_server/msg/_filter_state.py"
 	/opt/ros/fuerte/share/rospy/rosbuild/scripts/genmsg_py.py --noinitpy /home/dgitz/fuerte_workspace/sandbox/icarus_drone_server/msg/filter_state.msg
 
 ROSBUILD_genmsg_py: CMakeFiles/ROSBUILD_genmsg_py
 ROSBUILD_genmsg_py: ../src/icarus_drone_server/msg/__init__.py
+ROSBUILD_genmsg_py: ../src/icarus_drone_server/msg/_Navdata.py
 ROSBUILD_genmsg_py: ../src/icarus_drone_server/msg/_Num.py
 ROSBUILD_genmsg_py: ../src/icarus_drone_server/msg/_filter_state.py
 ROSBUILD_genmsg_py: CMakeFiles/ROSBUILD_genmsg_py.dir/build.make

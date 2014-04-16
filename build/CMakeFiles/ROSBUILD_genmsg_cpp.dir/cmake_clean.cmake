@@ -3,6 +3,7 @@ FILE(REMOVE_RECURSE
   "../src/icarus_drone_server/msg"
   "../msg_gen"
   "CMakeFiles/ROSBUILD_genmsg_cpp"
+  "../msg_gen/cpp/include/icarus_drone_server/Navdata.h"
   "../msg_gen/cpp/include/icarus_drone_server/Num.h"
   "../msg_gen/cpp/include/icarus_drone_server/filter_state.h"
 )

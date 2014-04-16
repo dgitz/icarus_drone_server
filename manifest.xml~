@@ -1,5 +1,5 @@
 <package>
-  <description brief="beginner_tutorials">
+  <description brief="icarus_drone_server">
 
      beginner_tutorials
 
@@ -11,6 +11,9 @@
   <depend package="std_msgs"/>
   <depend package="rospy"/>
   <depend package="roscpp"/>
+  <depend package="cv_bridge"/>
+  <depend package="tf"/>
+  <depend package="roslib"/>
 
 </package>
 

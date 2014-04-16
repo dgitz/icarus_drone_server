@@ -42,6 +42,9 @@ CMAKE_BINARY_DIR = /home/dgitz/fuerte_workspace/sandbox/icarus_drone_server/buil
 # Include the progress variables for this target.
 include CMakeFiles/ROSBUILD_genmsg_lisp.dir/progress.make
 
+CMakeFiles/ROSBUILD_genmsg_lisp: ../msg_gen/lisp/Navdata.lisp
+CMakeFiles/ROSBUILD_genmsg_lisp: ../msg_gen/lisp/_package.lisp
+CMakeFiles/ROSBUILD_genmsg_lisp: ../msg_gen/lisp/_package_Navdata.lisp
 CMakeFiles/ROSBUILD_genmsg_lisp: ../msg_gen/lisp/Num.lisp
 CMakeFiles/ROSBUILD_genmsg_lisp: ../msg_gen/lisp/_package.lisp
 CMakeFiles/ROSBUILD_genmsg_lisp: ../msg_gen/lisp/_package_Num.lisp
@@ -49,29 +52,80 @@ CMakeFiles/ROSBUILD_genmsg_lisp: ../msg_gen/lisp/filter_state.lisp
 CMakeFiles/ROSBUILD_genmsg_lisp: ../msg_gen/lisp/_package.lisp
 CMakeFiles/ROSBUILD_genmsg_lisp: ../msg_gen/lisp/_package_filter_state.lisp
 
+../msg_gen/lisp/Navdata.lisp: ../msg/Navdata.msg
+../msg_gen/lisp/Navdata.lisp: /opt/ros/fuerte/share/roslisp/rosbuild/scripts/genmsg_lisp.py
+../msg_gen/lisp/Navdata.lisp: /opt/ros/fuerte/share/roslib/bin/gendeps
+../msg_gen/lisp/Navdata.lisp: /opt/ros/fuerte/share/std_msgs/msg/Header.msg
+../msg_gen/lisp/Navdata.lisp: ../manifest.xml
+../msg_gen/lisp/Navdata.lisp: /opt/ros/fuerte/share/roslang/manifest.xml
+../msg_gen/lisp/Navdata.lisp: /opt/ros/fuerte/share/roscpp/manifest.xml
+../msg_gen/lisp/Navdata.lisp: /opt/ros/fuerte/share/geometry_msgs/manifest.xml
+../msg_gen/lisp/Navdata.lisp: /opt/ros/fuerte/share/sensor_msgs/manifest.xml
+../msg_gen/lisp/Navdata.lisp: /opt/ros/fuerte/share/ros/core/rosbuild/manifest.xml
+../msg_gen/lisp/Navdata.lisp: /opt/ros/fuerte/share/roslib/manifest.xml
+../msg_gen/lisp/Navdata.lisp: /opt/ros/fuerte/share/rosconsole/manifest.xml
+../msg_gen/lisp/Navdata.lisp: /opt/ros/fuerte/stacks/pluginlib/manifest.xml
+../msg_gen/lisp/Navdata.lisp: /opt/ros/fuerte/share/message_filters/manifest.xml
+../msg_gen/lisp/Navdata.lisp: /opt/ros/fuerte/stacks/image_common/image_transport/manifest.xml
+../msg_gen/lisp/Navdata.lisp: /opt/ros/fuerte/share/std_srvs/manifest.xml
+../msg_gen/lisp/Navdata.lisp: /opt/ros/fuerte/stacks/bullet/manifest.xml
+../msg_gen/lisp/Navdata.lisp: /opt/ros/fuerte/stacks/geometry/angles/manifest.xml
+../msg_gen/lisp/Navdata.lisp: /opt/ros/fuerte/share/rospy/manifest.xml
+../msg_gen/lisp/Navdata.lisp: /opt/ros/fuerte/share/rostest/manifest.xml
+../msg_gen/lisp/Navdata.lisp: /opt/ros/fuerte/share/roswtf/manifest.xml
+../msg_gen/lisp/Navdata.lisp: /opt/ros/fuerte/stacks/geometry/tf/manifest.xml
+../msg_gen/lisp/Navdata.lisp: /opt/ros/fuerte/stacks/common_rosdeps/manifest.xml
+../msg_gen/lisp/Navdata.lisp: /opt/ros/fuerte/stacks/image_common/camera_calibration_parsers/manifest.xml
+../msg_gen/lisp/Navdata.lisp: /opt/ros/fuerte/stacks/image_common/camera_info_manager/manifest.xml
+../msg_gen/lisp/Navdata.lisp: /home/dgitz/fuerte_workspace/sandbox/ardrone_autonomy/manifest.xml
+../msg_gen/lisp/Navdata.lisp: /opt/ros/fuerte/share/std_msgs/manifest.xml
+../msg_gen/lisp/Navdata.lisp: /opt/ros/fuerte/stacks/vision_opencv/opencv2/manifest.xml
+../msg_gen/lisp/Navdata.lisp: /opt/ros/fuerte/stacks/vision_opencv/cv_bridge/manifest.xml
+../msg_gen/lisp/Navdata.lisp: /opt/ros/fuerte/stacks/geometry/tf/msg_gen/generated
+../msg_gen/lisp/Navdata.lisp: /opt/ros/fuerte/stacks/geometry/tf/srv_gen/generated
+../msg_gen/lisp/Navdata.lisp: /home/dgitz/fuerte_workspace/sandbox/ardrone_autonomy/msg_gen/generated
+../msg_gen/lisp/Navdata.lisp: /home/dgitz/fuerte_workspace/sandbox/ardrone_autonomy/srv_gen/generated
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/dgitz/fuerte_workspace/sandbox/icarus_drone_server/build/CMakeFiles $(CMAKE_PROGRESS_1)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold "Generating ../msg_gen/lisp/Navdata.lisp, ../msg_gen/lisp/_package.lisp, ../msg_gen/lisp/_package_Navdata.lisp"
+	/opt/ros/fuerte/share/roslisp/rosbuild/scripts/genmsg_lisp.py /home/dgitz/fuerte_workspace/sandbox/icarus_drone_server/msg/Navdata.msg
+
+../msg_gen/lisp/_package.lisp: ../msg_gen/lisp/Navdata.lisp
+
+../msg_gen/lisp/_package_Navdata.lisp: ../msg_gen/lisp/Navdata.lisp
+
 ../msg_gen/lisp/Num.lisp: ../msg/Num.msg
 ../msg_gen/lisp/Num.lisp: /opt/ros/fuerte/share/roslisp/rosbuild/scripts/genmsg_lisp.py
 ../msg_gen/lisp/Num.lisp: /opt/ros/fuerte/share/roslib/bin/gendeps
 ../msg_gen/lisp/Num.lisp: ../manifest.xml
-../msg_gen/lisp/Num.lisp: /opt/ros/fuerte/share/std_msgs/manifest.xml
 ../msg_gen/lisp/Num.lisp: /opt/ros/fuerte/share/roslang/manifest.xml
-../msg_gen/lisp/Num.lisp: /opt/ros/fuerte/share/rospy/manifest.xml
 ../msg_gen/lisp/Num.lisp: /opt/ros/fuerte/share/roscpp/manifest.xml
 ../msg_gen/lisp/Num.lisp: /opt/ros/fuerte/share/geometry_msgs/manifest.xml
 ../msg_gen/lisp/Num.lisp: /opt/ros/fuerte/share/sensor_msgs/manifest.xml
-../msg_gen/lisp/Num.lisp: /opt/ros/fuerte/stacks/vision_opencv/opencv2/manifest.xml
-../msg_gen/lisp/Num.lisp: /opt/ros/fuerte/stacks/vision_opencv/cv_bridge/manifest.xml
-../msg_gen/lisp/Num.lisp: /opt/ros/fuerte/stacks/bullet/manifest.xml
+../msg_gen/lisp/Num.lisp: /opt/ros/fuerte/share/ros/core/rosbuild/manifest.xml
+../msg_gen/lisp/Num.lisp: /opt/ros/fuerte/share/roslib/manifest.xml
 ../msg_gen/lisp/Num.lisp: /opt/ros/fuerte/share/rosconsole/manifest.xml
+../msg_gen/lisp/Num.lisp: /opt/ros/fuerte/stacks/pluginlib/manifest.xml
+../msg_gen/lisp/Num.lisp: /opt/ros/fuerte/share/message_filters/manifest.xml
+../msg_gen/lisp/Num.lisp: /opt/ros/fuerte/stacks/image_common/image_transport/manifest.xml
+../msg_gen/lisp/Num.lisp: /opt/ros/fuerte/share/std_srvs/manifest.xml
+../msg_gen/lisp/Num.lisp: /opt/ros/fuerte/stacks/bullet/manifest.xml
 ../msg_gen/lisp/Num.lisp: /opt/ros/fuerte/stacks/geometry/angles/manifest.xml
+../msg_gen/lisp/Num.lisp: /opt/ros/fuerte/share/rospy/manifest.xml
 ../msg_gen/lisp/Num.lisp: /opt/ros/fuerte/share/rostest/manifest.xml
 ../msg_gen/lisp/Num.lisp: /opt/ros/fuerte/share/roswtf/manifest.xml
-../msg_gen/lisp/Num.lisp: /opt/ros/fuerte/share/message_filters/manifest.xml
 ../msg_gen/lisp/Num.lisp: /opt/ros/fuerte/stacks/geometry/tf/manifest.xml
-../msg_gen/lisp/Num.lisp: /opt/ros/fuerte/share/roslib/manifest.xml
+../msg_gen/lisp/Num.lisp: /opt/ros/fuerte/stacks/common_rosdeps/manifest.xml
+../msg_gen/lisp/Num.lisp: /opt/ros/fuerte/stacks/image_common/camera_calibration_parsers/manifest.xml
+../msg_gen/lisp/Num.lisp: /opt/ros/fuerte/stacks/image_common/camera_info_manager/manifest.xml
+../msg_gen/lisp/Num.lisp: /home/dgitz/fuerte_workspace/sandbox/ardrone_autonomy/manifest.xml
+../msg_gen/lisp/Num.lisp: /opt/ros/fuerte/share/std_msgs/manifest.xml
+../msg_gen/lisp/Num.lisp: /opt/ros/fuerte/stacks/vision_opencv/opencv2/manifest.xml
+../msg_gen/lisp/Num.lisp: /opt/ros/fuerte/stacks/vision_opencv/cv_bridge/manifest.xml
 ../msg_gen/lisp/Num.lisp: /opt/ros/fuerte/stacks/geometry/tf/msg_gen/generated
 ../msg_gen/lisp/Num.lisp: /opt/ros/fuerte/stacks/geometry/tf/srv_gen/generated
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/dgitz/fuerte_workspace/sandbox/icarus_drone_server/build/CMakeFiles $(CMAKE_PROGRESS_1)
+../msg_gen/lisp/Num.lisp: /home/dgitz/fuerte_workspace/sandbox/ardrone_autonomy/msg_gen/generated
+../msg_gen/lisp/Num.lisp: /home/dgitz/fuerte_workspace/sandbox/ardrone_autonomy/srv_gen/generated
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/dgitz/fuerte_workspace/sandbox/icarus_drone_server/build/CMakeFiles $(CMAKE_PROGRESS_2)
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold "Generating ../msg_gen/lisp/Num.lisp, ../msg_gen/lisp/_package.lisp, ../msg_gen/lisp/_package_Num.lisp"
 	/opt/ros/fuerte/share/roslisp/rosbuild/scripts/genmsg_lisp.py /home/dgitz/fuerte_workspace/sandbox/icarus_drone_server/msg/Num.msg
 
@@ -84,25 +138,35 @@ CMakeFiles/ROSBUILD_genmsg_lisp: ../msg_gen/lisp/_package_filter_state.lisp
 ../msg_gen/lisp/filter_state.lisp: /opt/ros/fuerte/share/roslib/bin/gendeps
 ../msg_gen/lisp/filter_state.lisp: /opt/ros/fuerte/share/std_msgs/msg/Header.msg
 ../msg_gen/lisp/filter_state.lisp: ../manifest.xml
-../msg_gen/lisp/filter_state.lisp: /opt/ros/fuerte/share/std_msgs/manifest.xml
 ../msg_gen/lisp/filter_state.lisp: /opt/ros/fuerte/share/roslang/manifest.xml
-../msg_gen/lisp/filter_state.lisp: /opt/ros/fuerte/share/rospy/manifest.xml
 ../msg_gen/lisp/filter_state.lisp: /opt/ros/fuerte/share/roscpp/manifest.xml
 ../msg_gen/lisp/filter_state.lisp: /opt/ros/fuerte/share/geometry_msgs/manifest.xml
 ../msg_gen/lisp/filter_state.lisp: /opt/ros/fuerte/share/sensor_msgs/manifest.xml
-../msg_gen/lisp/filter_state.lisp: /opt/ros/fuerte/stacks/vision_opencv/opencv2/manifest.xml
-../msg_gen/lisp/filter_state.lisp: /opt/ros/fuerte/stacks/vision_opencv/cv_bridge/manifest.xml
-../msg_gen/lisp/filter_state.lisp: /opt/ros/fuerte/stacks/bullet/manifest.xml
+../msg_gen/lisp/filter_state.lisp: /opt/ros/fuerte/share/ros/core/rosbuild/manifest.xml
+../msg_gen/lisp/filter_state.lisp: /opt/ros/fuerte/share/roslib/manifest.xml
 ../msg_gen/lisp/filter_state.lisp: /opt/ros/fuerte/share/rosconsole/manifest.xml
+../msg_gen/lisp/filter_state.lisp: /opt/ros/fuerte/stacks/pluginlib/manifest.xml
+../msg_gen/lisp/filter_state.lisp: /opt/ros/fuerte/share/message_filters/manifest.xml
+../msg_gen/lisp/filter_state.lisp: /opt/ros/fuerte/stacks/image_common/image_transport/manifest.xml
+../msg_gen/lisp/filter_state.lisp: /opt/ros/fuerte/share/std_srvs/manifest.xml
+../msg_gen/lisp/filter_state.lisp: /opt/ros/fuerte/stacks/bullet/manifest.xml
 ../msg_gen/lisp/filter_state.lisp: /opt/ros/fuerte/stacks/geometry/angles/manifest.xml
+../msg_gen/lisp/filter_state.lisp: /opt/ros/fuerte/share/rospy/manifest.xml
 ../msg_gen/lisp/filter_state.lisp: /opt/ros/fuerte/share/rostest/manifest.xml
 ../msg_gen/lisp/filter_state.lisp: /opt/ros/fuerte/share/roswtf/manifest.xml
-../msg_gen/lisp/filter_state.lisp: /opt/ros/fuerte/share/message_filters/manifest.xml
 ../msg_gen/lisp/filter_state.lisp: /opt/ros/fuerte/stacks/geometry/tf/manifest.xml
-../msg_gen/lisp/filter_state.lisp: /opt/ros/fuerte/share/roslib/manifest.xml
+../msg_gen/lisp/filter_state.lisp: /opt/ros/fuerte/stacks/common_rosdeps/manifest.xml
+../msg_gen/lisp/filter_state.lisp: /opt/ros/fuerte/stacks/image_common/camera_calibration_parsers/manifest.xml
+../msg_gen/lisp/filter_state.lisp: /opt/ros/fuerte/stacks/image_common/camera_info_manager/manifest.xml
+../msg_gen/lisp/filter_state.lisp: /home/dgitz/fuerte_workspace/sandbox/ardrone_autonomy/manifest.xml
+../msg_gen/lisp/filter_state.lisp: /opt/ros/fuerte/share/std_msgs/manifest.xml
+../msg_gen/lisp/filter_state.lisp: /opt/ros/fuerte/stacks/vision_opencv/opencv2/manifest.xml
+../msg_gen/lisp/filter_state.lisp: /opt/ros/fuerte/stacks/vision_opencv/cv_bridge/manifest.xml
 ../msg_gen/lisp/filter_state.lisp: /opt/ros/fuerte/stacks/geometry/tf/msg_gen/generated
 ../msg_gen/lisp/filter_state.lisp: /opt/ros/fuerte/stacks/geometry/tf/srv_gen/generated
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/dgitz/fuerte_workspace/sandbox/icarus_drone_server/build/CMakeFiles $(CMAKE_PROGRESS_2)
+../msg_gen/lisp/filter_state.lisp: /home/dgitz/fuerte_workspace/sandbox/ardrone_autonomy/msg_gen/generated
+../msg_gen/lisp/filter_state.lisp: /home/dgitz/fuerte_workspace/sandbox/ardrone_autonomy/srv_gen/generated
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/dgitz/fuerte_workspace/sandbox/icarus_drone_server/build/CMakeFiles $(CMAKE_PROGRESS_3)
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold "Generating ../msg_gen/lisp/filter_state.lisp, ../msg_gen/lisp/_package.lisp, ../msg_gen/lisp/_package_filter_state.lisp"
 	/opt/ros/fuerte/share/roslisp/rosbuild/scripts/genmsg_lisp.py /home/dgitz/fuerte_workspace/sandbox/icarus_drone_server/msg/filter_state.msg
 
@@ -111,6 +175,9 @@ CMakeFiles/ROSBUILD_genmsg_lisp: ../msg_gen/lisp/_package_filter_state.lisp
 ../msg_gen/lisp/_package_filter_state.lisp: ../msg_gen/lisp/filter_state.lisp
 
 ROSBUILD_genmsg_lisp: CMakeFiles/ROSBUILD_genmsg_lisp
+ROSBUILD_genmsg_lisp: ../msg_gen/lisp/Navdata.lisp
+ROSBUILD_genmsg_lisp: ../msg_gen/lisp/_package.lisp
+ROSBUILD_genmsg_lisp: ../msg_gen/lisp/_package_Navdata.lisp
 ROSBUILD_genmsg_lisp: ../msg_gen/lisp/Num.lisp
 ROSBUILD_genmsg_lisp: ../msg_gen/lisp/_package.lisp
 ROSBUILD_genmsg_lisp: ../msg_gen/lisp/_package_Num.lisp
