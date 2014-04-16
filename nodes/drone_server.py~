@@ -162,7 +162,7 @@ class ros_service:
 			self.bridge = CvBridge()
 			self.poseestimate_sub = rospy.Subscriber("/ardrone/predictedPose",filter_state,self.cb_pose_estimate)
 			self.frontimg_sub = rospy.Subscriber("/ardrone/front/image_raw",Image,self.cb_newfront_img)
-			cmd_register = rospy.Publisher('cmd_register',Empty)
+			cmd_register = rospy.Publisher('cmd_register',String)
 			if matlabserver_enabled:
 				if xmitmode == 'TCP':
 					matlabserver_socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
@@ -372,10 +372,10 @@ def mainloop():
 	rospy.sleep(3)
 	gInitComplete = True
 	slam_reg_time = 0
-	slam_reg_time_limit = 100 #Loops to complete the registration process
-	slam_run_time_limit = 3000 #Loops to wait between SLAM re-registration
+	slam_reg_time_limit = 800 #Loops to complete the registration process
+	slam_run_time_limit = 300000 #Loops to wait between SLAM re-registration
 	slam_run_time = 0
-	slam_reg_rollrate = .5
+	slam_reg_rollrate = .2
 	
 	print 'Initialization Complete.  Starting Mode: {}'.format(mode)
 	#device_mc.changemode(mavlink.MAV_MODE_MANUAL_DISARMED)	
@@ -436,8 +436,10 @@ def mainloop():
 			if slam_mode == 'slam_init':
 				print 'Starting Registration Process'
 				slam_mode = 'slam_registering'
-				cmd_register.publish(Empty())
+				cmd_register.publish("reset")
+				cmd_register.publish("start")
 				slam_reg_time = 0
+				slam_reg_rollrate = -1*slam_reg_rollrate
 				#Code for computing and modifying the new pose state
 			elif slam_mode == 'slam_registering':
 				#pdb.set_trace()
@@ -450,6 +452,7 @@ def mainloop():
 				cmd_twist.linear.z = 0
 				if slam_reg_time > slam_reg_time_limit:
 					print 'Registration Done'
+					cmd_register.publish("finish")
 					cmd_roll_pub.publish(0.0)
 					
 					cmd_twist.linear.y = 0	
