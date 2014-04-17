@@ -53,7 +53,7 @@ parser = OptionParser("drone_server.py [options]")
 #parser.add_option("--mode",dest="mode",default="None",help="net,slam,None")
 parser.add_option("--nav",dest="nav",default=False)
 parser.add_option("--slam",dest="slam",default=False)
-parser.add_option("--mode",dest="mode",default="Acquire",help="Acquire,Train,Test,Execute,Test")
+parser.add_option("--mode",dest="mode",default="Execute",help="Acquire,Train,Test,Execute,Test")
 parser.add_option("--target_acquire_mode",dest="target_acquire_mode",default="Live",help="Live,Simulated")
 parser.add_option("--target_acquire_class",dest="target_acquire_class",default="None",help="Name of Target Class")
 parser.add_option("--target_acquire_count",dest="target_acquire_count",default="400",help="Number of Images to acquire")
@@ -61,7 +61,7 @@ parser.add_option("--target_acquire_rate",dest="target_acquire_rate",default="10
 parser.add_option("--script",dest="script",default='Script6',help="Image Preprocessing Script")
 parser.add_option("--control",dest="control",default='Joystick',help="Keyboard,Joystick,None")
 parser.add_option("--debug",dest="debug",default='True',help="True or False")
-parser.add_option("--matlabserver",dest="matlabserver",default='True',help="True or False")
+parser.add_option("--matlabserver",dest="matlabserver",default='False',help="True or False")
 parser.add_option("--simserver",dest="simserver",default='False',help='True or False')
 
 
@@ -370,13 +370,18 @@ def mainloop():
 	global matlabserver_initialized
 	global matlabserver_enabled
 	global matlabserver_socket
-	global slam_mode
+	global slam_fsm_mode
+	global slam_roll_counter
+	global slam_slew_counter
+	global slam_run_counter
+	global slam_reg_holdoff_counter
 	global cmd_register
 	global cmd_roll_pub
 	global flight_mode
 	global cmd_twist
 	global teleopcmd_pub
-	slam_mode = "slam_init"
+	
+	slam_fsm_mode = "slam_init"
 	flight_mode = 'flight_landed'
 	my_MissionItems = []
 	#device_gcs.display()
@@ -413,11 +418,6 @@ def mainloop():
 	print "Waiting 3 seconds..."
 	rospy.sleep(3)
 	gInitComplete = True
-	slam_reg_time = 0
-	slam_reg_time_limit = 800 #Loops to complete the registration process
-	slam_run_time_limit = 3000 #Loops to wait between SLAM re-registration
-	slam_run_time = 0
-	slam_reg_rollrate = .2
 	
 	print 'Initialization Complete.  Starting Mode: {}'.format(mode)
 	#device_mc.changemode(mavlink.MAV_MODE_MANUAL_DISARMED)	
@@ -471,44 +471,7 @@ def mainloop():
 				elif mykey == ord('d'):
 					target_yaw = target_yaw + 1
 				#print 'Y: {} Angle: {}'.format(target_y,target_yaw)
-				
-		
-			
-			
-			if slam_mode == 'slam_init':
-				print 'Starting Registration Process'
-				slam_mode = 'slam_registering'
-				cmd_register.publish("reset")
-				cmd_register.publish("start")
-				slam_reg_time = 0
-				slam_reg_rollrate = -1*slam_reg_rollrate
-				#Code for computing and modifying the new pose state
-			elif slam_mode == 'slam_registering':
-				#pdb.set_trace()
-				cmd_roll_pub.publish(slam_reg_rollrate)
-				slam_reg_time = slam_reg_time+1
-				
-				cmd_twist.angular.z = 0
-				cmd_twist.linear.x = 0
-				cmd_twist.linear.y = slam_reg_rollrate
-				cmd_twist.linear.z = 0
-				if slam_reg_time > slam_reg_time_limit:
-					print 'Registration Done'
-					cmd_register.publish("finish")
-					cmd_roll_pub.publish(0.0)
-					
-					cmd_twist.linear.y = 0	
-									
-					slam_mode = 'slam_running'
-					slam_run_time = 0
-				teleopcmd_pub.publish(cmd_twist)
-			elif slam_mode == 'slam_running':
-				
-				slam_run_time = slam_run_time + 1
-				#teleop_tf_pub.sendTransform((0,0,0),tf.transformations.quaternion_from_euler(0,0,0),rospy.Time.now(),"cam_front","base_link")
-				if slam_run_time > slam_run_time_limit:
-					slam_mode = 'slam_init'
-				
+			slam_fsm()
 			
 	print 'Exiting Program'
 	cv2.destroyAllWindows()
@@ -521,7 +484,89 @@ def mainloop():
 			
 		
 		
-
+def slam_fsm():
+	global slam_fsm_mode#slam_init,slam_disabled,slam_roll_left,slam_roll_right,slam_slew_left,slam_slew_right,slam_running,slam_reg_holdoff
+	global slam_roll_counter
+	global slam_slew_counter
+	global slam_run_counter
+	global slam_reg_holdoff_counter
+	roll_rate = .75
+	roll_limit = 500
+	slew_limit = 2000
+	run_limit = 20000
+	holdoff_limit = 500
+	if slam_fsm_mode == 'slam_disabled':
+		print slam_fsm_mode
+	elif slam_fsm_mode == 'slam_init':
+		print slam_fsm_mode
+		cmd_register.publish("reset")		
+		slam_roll_counter = 0
+		cmd_roll_pub.publish(roll_rate)
+		cmd_twist.angular.z = 0
+		cmd_twist.linear.x = 0
+		cmd_twist.linear.y = roll_rate
+		cmd_twist.linear.z = 0
+		teleopcmd_pub.publish(cmd_twist)
+		slam_fsm_mode = 'slam_roll_left'		
+	elif slam_fsm_mode == 'slam_roll_left':
+		print slam_fsm_mode
+		slam_roll_counter = slam_roll_counter + 1
+		if slam_roll_counter > roll_limit:
+			slam_roll_counter = 0
+			slam_slew_counter = 0
+			slam_reg_holdoff_counter = 0
+			cmd_roll_pub.publish(0)
+			cmd_twist.angular.z = 0
+			cmd_twist.linear.x = 0
+			cmd_twist.linear.y = 0
+			cmd_twist.linear.z = 0
+			teleopcmd_pub.publish(cmd_twist)
+			slam_fsm_mode = 'slam_reg_holdoff'
+	elif slam_fsm_mode == 'slam_reg_holdoff':
+		print slam_fsm_mode
+		slam_reg_holdoff_counter = slam_reg_holdoff_counter + 1
+		if slam_reg_holdoff_counter > holdoff_limit:
+			cmd_register.publish("start")
+			slam_fsm_mode = 'slam_slew_left'		
+	elif slam_fsm_mode == 'slam_slew_left':
+		print slam_fsm_mode
+		slam_slew_counter = slam_slew_counter + 1
+		if slam_slew_counter > slew_limit:
+			cmd_register.publish("finish");
+			slam_slew_counter = 0
+			slam_roll_counter = 0
+			slam_fsm_mode = 'slam_roll_right'
+			cmd_roll_pub.publish(-roll_rate)
+			cmd_twist.angular.z = 0
+			cmd_twist.linear.x = 0
+			cmd_twist.linear.y = -roll_rate
+			cmd_twist.linear.z = 0
+			teleopcmd_pub.publish(cmd_twist)
+	elif slam_fsm_mode == 'slam_roll_right':
+		print slam_fsm_mode
+		slam_roll_counter = slam_roll_counter + 1
+		if slam_roll_counter > roll_limit:
+			slam_roll_counter = 0
+			slam_slew_counter = 0
+			cmd_roll_pub.publish(0)
+			cmd_twist.angular.z = 0
+			cmd_twist.linear.x = 0
+			cmd_twist.linear.y = 0
+			cmd_twist.linear.z = 0
+			slam_fsm_mode = 'slam_slew_right'			
+	elif slam_fsm_mode == 'slam_slew_right':
+		print slam_fsm_mode
+		slam_slew_counter = slam_slew_counter + 1
+		if slam_slew_counter > slew_limit:
+			slam_run_counter = 0
+			slam_fsm_mode = 'slam_running'
+	elif slam_fsm_mode == 'slam_running':
+		print slam_fsm_mode
+		slam_run_counter = slam_run_counter + 1
+		if slam_run_counter > run_limit:
+			slam_run_counter = 0
+			slam_fsm_mode = 'slam_init'
+	
 def icarus_msghandler(mysocket):
 	try:
 		global target_x
