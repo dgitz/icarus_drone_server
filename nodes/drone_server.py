@@ -201,10 +201,11 @@ class ros_service:
 		pose_yaw = data.rotZ
 	def joyCallback(self, joy):
 		global cmd_yaw_pub
-		global slam_mode
+		global slam_fsm_mode
 		global flight_mode
 		global cmd_twist
 		global teleopcmd_pub
+		global slam_init_holdoff_counter
 		self.joyaxis_pitch = 1
 		self.joyaxis_roll = 0
 		self.joyaxis_throttle = 3
@@ -216,16 +217,17 @@ class ros_service:
 		if joy.buttons[self.joybutton_takeoff]:
 			self.teleoptakeoff_pub.publish(Empty())
 			flight_mode = 'flight_running'
-			slam_mode = 'slam_init'
+			slam_init_holdoff_counter = 0
+			#slam_fsm_mode = 'slam_init_holdoff'
 			if DEBUG:print 'Taking Off'
 			
 		if joy.buttons[self.joybutton_land]:
 			flight_mode = 'flight_landed'
-			slam_mode = 'slam_disabled'
+			slam_fsm_mode = 'slam_disabled'
 			if DEBUG:print 'Landing'
 			self.teleopland_pub.publish(Empty())
 		if DEBUG:print 'P: {:.2f} R: {:.2f} Y: {:.2f} T: {:.2f}'.format(joy.axes[self.joyaxis_pitch],joy.axes[self.joyaxis_roll],joy.axes[self.joyaxis_yaw],joy.axes[self.joyaxis_throttle])
-		if slam_mode == 'slam_running' or slam_mode == 'slam_disabled':
+		if slam_fsm_mode == 'slam_running' or slam_fsm_mode == 'slam_disabled' or slam_fsm_mode == 'slam_init_holdoff':
 			cmd_twist.linear.x = joy.axes[self.joyaxis_pitch]
 			cmd_twist.linear.y = joy.axes[self.joyaxis_roll]
 			cmd_twist.linear.z = joy.axes[self.joyaxis_throttle]
@@ -288,8 +290,8 @@ class ros_service:
 				matlabserver_socket.send(myheader)
 				matlabserver_socket.send(l)
 				matlabserver_socket.sendall(rotated_image)
-		cv2.imshow("Rotated Image",rotated_image)		
-		cv2.waitKey(1)
+		#cv2.imshow("Rotated Image",rotated_image)		
+		#cv2.waitKey(1)
 	def cb_pose_estimate(self,data):
 		global pose_x
 		global pose_y
@@ -372,7 +374,8 @@ def mainloop():
 	global matlabserver_socket
 	global slam_fsm_mode
 	global slam_roll_counter
-	global slam_slew_counter
+	global slam_slew_left_counter
+	global slam_slew_right_counter
 	global slam_run_counter
 	global slam_reg_holdoff_counter
 	global cmd_register
@@ -381,7 +384,7 @@ def mainloop():
 	global cmd_twist
 	global teleopcmd_pub
 	
-	slam_fsm_mode = "slam_init"
+	slam_fsm_mode = "slam_disabled"
 	flight_mode = 'flight_landed'
 	my_MissionItems = []
 	#device_gcs.display()
@@ -485,16 +488,26 @@ def mainloop():
 		
 		
 def slam_fsm():
-	global slam_fsm_mode#slam_init,slam_disabled,slam_roll_left,slam_roll_right,slam_slew_left,slam_slew_right,slam_running,slam_reg_holdoff
+	global slam_fsm_mode#slam_init,slam_disabled,slam_roll_left,slam_roll_right,slam_slew_left,slam_slew_right,slam_running,slam_reg_holdoff,slam_init_holdoff
 	global slam_roll_counter
-	global slam_slew_counter
+	global slam_slew_left_counter
+	global slam_slew_right_counter
 	global slam_run_counter
 	global slam_reg_holdoff_counter
-	roll_rate = .75
-	roll_limit = 500
-	slew_limit = 2000
-	run_limit = 20000
-	holdoff_limit = 500
+	global slam_init_holdoff_counter
+	roll_rate = -.75
+	roll_limit = 100
+	slew_left_limit = 500
+	slew_right_limit = 500
+	run_limit = 25000
+	init_holdoff_limit = 5000 #8000 is a bit high, but safe
+	reg_holdoff_limit = 1
+	if slam_fsm_mode == 'slam_init_holdoff':
+		print slam_fsm_mode
+		slam_init_holdoff_counter = slam_init_holdoff_counter + 1
+		if slam_init_holdoff_counter > init_holdoff_limit:
+			slam_init_holdoff_counter = 0
+			slam_fsm_mode = 'slam_init'
 	if slam_fsm_mode == 'slam_disabled':
 		print slam_fsm_mode
 	elif slam_fsm_mode == 'slam_init':
@@ -513,7 +526,8 @@ def slam_fsm():
 		slam_roll_counter = slam_roll_counter + 1
 		if slam_roll_counter > roll_limit:
 			slam_roll_counter = 0
-			slam_slew_counter = 0
+			slam_slew_left_counter = 0
+			slam_slew_right_counter = 0
 			slam_reg_holdoff_counter = 0
 			cmd_roll_pub.publish(0)
 			cmd_twist.angular.z = 0
@@ -525,13 +539,13 @@ def slam_fsm():
 	elif slam_fsm_mode == 'slam_reg_holdoff':
 		print slam_fsm_mode
 		slam_reg_holdoff_counter = slam_reg_holdoff_counter + 1
-		if slam_reg_holdoff_counter > holdoff_limit:
+		if slam_reg_holdoff_counter > reg_holdoff_limit:
 			cmd_register.publish("start")
 			slam_fsm_mode = 'slam_slew_left'		
 	elif slam_fsm_mode == 'slam_slew_left':
 		print slam_fsm_mode
-		slam_slew_counter = slam_slew_counter + 1
-		if slam_slew_counter > slew_limit:
+		slam_slew_left_counter = slam_slew_left_counter + 1
+		if slam_slew_left_counter > slew_left_limit:
 			cmd_register.publish("finish");
 			slam_slew_counter = 0
 			slam_roll_counter = 0
@@ -553,11 +567,12 @@ def slam_fsm():
 			cmd_twist.linear.x = 0
 			cmd_twist.linear.y = 0
 			cmd_twist.linear.z = 0
+			teleopcmd_pub.publish(cmd_twist)
 			slam_fsm_mode = 'slam_slew_right'			
 	elif slam_fsm_mode == 'slam_slew_right':
 		print slam_fsm_mode
-		slam_slew_counter = slam_slew_counter + 1
-		if slam_slew_counter > slew_limit:
+		slam_slew_right_counter = slam_slew_right_counter + 1
+		if slam_slew_right_counter > slew_right_limit:
 			slam_run_counter = 0
 			slam_fsm_mode = 'slam_running'
 	elif slam_fsm_mode == 'slam_running':
