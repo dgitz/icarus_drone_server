@@ -1,4 +1,7 @@
 #!/usr/bin/python
+
+file_results = open('22APR2014-P3.txt','w')
+
 import pdb
 import roslib
 roslib.load_manifest('icarus_drone_server')
@@ -61,8 +64,8 @@ parser.add_option("--target_acquire_rate",dest="target_acquire_rate",default="10
 parser.add_option("--script",dest="script",default='Script6',help="Image Preprocessing Script")
 parser.add_option("--control",dest="control",default='Joystick',help="Keyboard,Joystick,None")
 parser.add_option("--debug",dest="debug",default='True',help="True or False")
-parser.add_option("--matlabserver",dest="matlabserver",default='False',help="True or False")
-parser.add_option("--simserver",dest="simserver",default='False',help='True or False')
+parser.add_option("--matlabserver",dest="matlabserver",default='True',help="True or False")
+parser.add_option("--simserver",dest="simserver",default='True',help='True or False')
 
 
 (opts,args) = parser.parse_args()
@@ -170,6 +173,9 @@ class ros_service:
 			self.poseestimate_sub = rospy.Subscriber("/ardrone/predictedPose",filter_state,self.cb_pose_estimate)
 			self.frontimg_sub = rospy.Subscriber("/ardrone/front/image_raw",Image,self.cb_newfront_img)
 			cmd_register = rospy.Publisher('cmd_register',String)
+			if simserver_enabled:
+				self.simimage_sub = rospy.Subscriber("vrep/front_cam",Image,self.cb_newsimfront_img)
+
 			if matlabserver_enabled:
 				if xmitmode == 'TCP':
 					matlabserver_socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
@@ -196,9 +202,11 @@ class ros_service:
 		global pose_roll
 		global pose_pitch
 		global pose_yaw
+		global J_ar_counter
 		pose_roll = data.rotX
 		pose_pitch = data.rotY
 		pose_yaw = data.rotZ
+		J_ar_counter = J_ar_counter + 1
 	def joyCallback(self, joy):
 		global cmd_yaw_pub
 		global slam_fsm_mode
@@ -212,7 +220,6 @@ class ros_service:
 		self.joyaxis_yaw = 2
 		self.joybutton_takeoff = 0
 		self.joybutton_land = 2
-		
 		#pdb.set_trace()
 		if joy.buttons[self.joybutton_takeoff]:
 			self.teleoptakeoff_pub.publish(Empty())
@@ -239,7 +246,9 @@ class ros_service:
 			self.cmd_throttle_pub.publish(joy.axes[self.joyaxis_throttle])
 			
 			
-		
+	def cb_newsimfront_img(self,data):
+		global J_ss_counter
+		J_ss_counter = J_ss_counter + 1	
 	def cb_newfront_img(self,data):
 		global imagenum
 		global matlabserver_initialized
@@ -299,13 +308,14 @@ class ros_service:
 		global pose_roll
 		global pose_yaw
 		global pose_pitch
+		global J_se_counter
 		#pose_roll = data.roll
 		#pose_pitch = data.pitch
 		#pose_yaw = data.yaw
 		pose_x = data.x
 		pose_y = data.y
 		pose_z = data.z
-		
+		J_se_counter = J_se_counter + 1
 	def callbackCameraAcquire(self,data):
 		global imagenum
 		global gInitComplete
@@ -383,7 +393,11 @@ def mainloop():
 	global flight_mode
 	global cmd_twist
 	global teleopcmd_pub
-	
+	global J_ar_counter
+	global J_se_counter
+	global J_ds_counter
+	global J_ss_counter
+	global J_ms_counter
 	slam_fsm_mode = "slam_disabled"
 	flight_mode = 'flight_landed'
 	my_MissionItems = []
@@ -416,6 +430,8 @@ def mainloop():
 	lasttime = 0.0
 	starttime = time.time()
 	curtime = starttime
+	J_timer = 0
+	J_time_limit = 1.0 #1 Second
 	user_command = "q"
 	#device_mc.changemode(mavlink.MAV_MODE_PREFLIGHT)		
 	print "Waiting 3 seconds..."
@@ -451,16 +467,29 @@ def mainloop():
 		elapsedtime = (curtime-lasttime)
 		
 		boottime = int((curtime-starttime)*1000)
+		print boottime
 		#sprint boottime
 		updaterate = 1/elapsedtime #Hz
 		#print updaterate
 		dt = datetime.datetime.now()
-		
+		J_timer = J_timer + elapsedtime
+		J_ds_counter = J_ds_counter + 1
+		if boottime > 300000:
+			print 'Finished Acquisition'
+			
+		if (J_timer > J_time_limit and  boottime <= 300000): #Reset Job Timer
+			file_results.write("dt:{},J_ar:{},J_se:{},J_ds:{},J_ss:{},J_ms:{}\n".format(J_timer,J_ar_counter,J_se_counter,J_ds_counter,J_ss_counter,J_ms_counter))
+			J_timer = 0
+			J_ar_counter = 0
+			J_se_counter = 0
+			J_ds_counter = 0
+			J_ss_counter = 0
+			J_ms_counter = 0
 		#print "x: {}, y: {}, z: {}, r: {}, p: {}, y: {}".format(pose_x,pose_y,pose_z,pose_roll,pose_pitch,pose_yaw)
 		if mode == 'Execute':
 			if matlabserver_initialized:
 				icarus_msghandler(matlabserver_socket)
-				print 'Class: {} X:{} Y: {}'.format(target_class,target_x,target_y)
+				#print 'Class: {} X:{} Y: {}'.format(target_class,target_x,target_y)
 			if control_method == 'Keyboard':
 				img = np.empty((640,360))
 				cv2.imshow('User Control',img)
@@ -478,6 +507,7 @@ def mainloop():
 			
 	print 'Exiting Program'
 	cv2.destroyAllWindows()
+	file_results.close()
 	if mode == 'Execute':
 		if matlabserver_initialized:
 			matlabserver_socket.close()
@@ -495,21 +525,22 @@ def slam_fsm():
 	global slam_run_counter
 	global slam_reg_holdoff_counter
 	global slam_init_holdoff_counter
-	roll_rate = -.75
-	roll_limit = 100
-	slew_left_limit = 500
-	slew_right_limit = 500
+	roll_rate = 1
+	roll_limit = 250
+	slew_left_limit = 150
+	slew_right_limit = 150
 	run_limit = 25000
 	init_holdoff_limit = 5000 #8000 is a bit high, but safe
-	reg_holdoff_limit = 1
+	reg_holdoff_limit = 300
 	if slam_fsm_mode == 'slam_init_holdoff':
-		print slam_fsm_mode
+		#print slam_fsm_mode
 		slam_init_holdoff_counter = slam_init_holdoff_counter + 1
 		if slam_init_holdoff_counter > init_holdoff_limit:
 			slam_init_holdoff_counter = 0
 			slam_fsm_mode = 'slam_init'
 	if slam_fsm_mode == 'slam_disabled':
-		print slam_fsm_mode
+		dumb = 1
+		#print slam_fsm_mode
 	elif slam_fsm_mode == 'slam_init':
 		print slam_fsm_mode
 		cmd_register.publish("reset")		
@@ -589,6 +620,7 @@ def icarus_msghandler(mysocket):
 		global last_target_x
 		global last_target_y
 		global target_class
+		global J_ms_counter
 		if xmitmode == 'TCP':
 			packet_type = mysocket.recv(8)
 			packet_length = mysocket.recv(8)
@@ -602,6 +634,7 @@ def icarus_msghandler(mysocket):
 			elif xmitmode == 'UDP':
 				msg = mysocket.recvfrom(packet_length)
 			if packet_type == '$TGT,DFV':
+				J_ms_counter = J_ms_counter +1
 				mystr = msg.split(',')
 				if int(mystr[3]) > CONFIDENCE_LIMIT:
 					target_class = mystr[0]
@@ -665,6 +698,16 @@ def initvariables():
 	global flight_mode #flight_running flight_landed
 	global cmd_twist
 	global teleopcmd_pub
+	global J_ar_counter
+	global J_se_counter
+	global J_ds_counter
+	global J_ss_counter
+	global J_ms_counter
+	J_ar_counter = 0
+	J_se_counter = 0
+	J_ds_counter = 0
+	J_ss_counter = 0
+	J_ms_counter = 0
 	cmd_twist = Twist()
 	matlabserver_initialized = False
 	matlabserver_enabled = False
