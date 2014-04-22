@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-file_results = open('22APR2014-P3.txt','w')
+file_results = open('22APR2014-P3.csv','w')
 
 import pdb
 import roslib
@@ -202,11 +202,10 @@ class ros_service:
 		global pose_roll
 		global pose_pitch
 		global pose_yaw
-		global J_ar_counter
 		pose_roll = data.rotX
 		pose_pitch = data.rotY
 		pose_yaw = data.rotZ
-		J_ar_counter = J_ar_counter + 1
+		
 	def joyCallback(self, joy):
 		global cmd_yaw_pub
 		global slam_fsm_mode
@@ -255,6 +254,8 @@ class ros_service:
 		global matlabserver_enabled
 		global matlabserver_socket
 		global pose_roll
+		global J_ar_counter
+		J_ar_counter = J_ar_counter + 1
 		color_im = self.bridge.imgmsg_to_cv(data)
 		color_image = np.array(color_im)
 		
@@ -478,7 +479,7 @@ def mainloop():
 			print 'Finished Acquisition'
 			
 		if (J_timer > J_time_limit and  boottime <= 300000): #Reset Job Timer
-			file_results.write("dt:{},J_ar:{},J_se:{},J_ds:{},J_ss:{},J_ms:{}\n".format(J_timer,J_ar_counter,J_se_counter,J_ds_counter,J_ss_counter,J_ms_counter))
+			file_results.write("dt,{},J_ar,{},J_se,{},J_ds,{},J_ss,{},J_ms,{}\n".format(J_timer,J_ar_counter,J_se_counter,J_ds_counter,J_ss_counter,J_ms_counter))
 			J_timer = 0
 			J_ar_counter = 0
 			J_se_counter = 0
