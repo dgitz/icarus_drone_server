@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
-file_results = open('22APR2014-P3.csv','w')
-
+file_throughput_results = open('29APR2014-2-Throughput-P1.csv','w')
+file_workload_results = open('29APR2014-2-Workload-P1.csv','w')
 import pdb
 import roslib
 roslib.load_manifest('icarus_drone_server')
@@ -39,7 +39,7 @@ if xmitmode == 'UDP':
 	matlabserver_ip = '127.0.0.1'
 	matlabserver_port = 5006
 elif xmitmode == 'TCP':
-	matlabserver_ip = '192.168.0.104'
+	matlabserver_ip = '192.168.0.100'
 	matlabserver_port = 5005
 
 #import rgbdslam.msg
@@ -246,16 +246,20 @@ class ros_service:
 			
 			
 	def cb_newsimfront_img(self,data):
-		global J_ss_counter
-		J_ss_counter = J_ss_counter + 1	
+		global Jthroughput_ss_counter
+		global Jworkload_ss_counter
+		Jthroughput_ss_counter = Jthroughput_ss_counter + 1	
+		Jworkload_ss_counter = Jworkload_ss_counter + 1
 	def cb_newfront_img(self,data):
 		global imagenum
 		global matlabserver_initialized
 		global matlabserver_enabled
 		global matlabserver_socket
 		global pose_roll
-		global J_ar_counter
-		J_ar_counter = J_ar_counter + 1
+		global Jthroughput_ar_counter
+		global Jworkload_ar_counter
+		Jthroughput_ar_counter = Jthroughput_ar_counter + 1
+		Jworkload_ar_counter = Jworkload_ar_counter + 1
 		color_im = self.bridge.imgmsg_to_cv(data)
 		color_image = np.array(color_im)
 		
@@ -309,14 +313,16 @@ class ros_service:
 		global pose_roll
 		global pose_yaw
 		global pose_pitch
-		global J_se_counter
+		global Jthroughput_se_counter
+		global Jworkload_se_counter
 		#pose_roll = data.roll
 		#pose_pitch = data.pitch
 		#pose_yaw = data.yaw
 		pose_x = data.x
 		pose_y = data.y
 		pose_z = data.z
-		J_se_counter = J_se_counter + 1
+		Jthroughput_se_counter = Jthroughput_se_counter + 1
+		Jworkload_se_counter = Jworkload_se_counter + 1
 	def callbackCameraAcquire(self,data):
 		global imagenum
 		global gInitComplete
@@ -394,11 +400,16 @@ def mainloop():
 	global flight_mode
 	global cmd_twist
 	global teleopcmd_pub
-	global J_ar_counter
-	global J_se_counter
-	global J_ds_counter
-	global J_ss_counter
-	global J_ms_counter
+	global Jthroughput_ar_counter
+	global Jthroughput_se_counter
+	global Jthroughput_ds_counter
+	global Jthroughput_ss_counter
+	global Jthroughput_ms_counter
+	global Jworkload_ar_counter
+	global Jworkload_se_counter
+	global Jworkload_ds_counter
+	global Jworkload_ss_counter
+	global Jworkload_ms_counter
 	slam_fsm_mode = "slam_disabled"
 	flight_mode = 'flight_landed'
 	my_MissionItems = []
@@ -455,6 +466,10 @@ def mainloop():
 				
 				teleoptakeoff_pub = rospy.Publisher('/ardrone/takeoff',Empty)
 				teleopland_pub = rospy.Publisher('/ardrone/land',Empty)
+	throughput_acquisition_done = False
+	workload_acquisition_done = False
+	throughput_acquisition_time = 300000
+	workload_acquisition_limit = 1000
 	while not (rospy.is_shutdown()):
 		#time.sleep(1)
 		#tempstr = 'image{}.png'.format(imagenum)
@@ -468,24 +483,31 @@ def mainloop():
 		elapsedtime = (curtime-lasttime)
 		
 		boottime = int((curtime-starttime)*1000)
-		print boottime
+		print boottime,Jworkload_ar_counter,Jworkload_se_counter,Jworkload_ds_counter,Jworkload_ss_counter,Jworkload_ms_counter
 		#sprint boottime
 		updaterate = 1/elapsedtime #Hz
 		#print updaterate
 		dt = datetime.datetime.now()
 		J_timer = J_timer + elapsedtime
-		J_ds_counter = J_ds_counter + 1
-		if boottime > 300000:
-			print 'Finished Acquisition'
-			
-		if (J_timer > J_time_limit and  boottime <= 300000): #Reset Job Timer
-			file_results.write("dt,{},J_ar,{},J_se,{},J_ds,{},J_ss,{},J_ms,{}\n".format(J_timer,J_ar_counter,J_se_counter,J_ds_counter,J_ss_counter,J_ms_counter))
+		Jthroughput_ds_counter = Jthroughput_ds_counter + 1
+		Jworkload_ds_counter = Jworkload_ds_counter + 1
+		if (boottime > throughput_acquisition_time and throughput_acquisition_done==False):
+			print 'Finished Throughput Acquisition'
+			throughput_acquisition_done = True
+			file_throughput_results.close()
+		if (J_timer > J_time_limit and  boottime <= 300000 and throughput_acquisition_done==False): #Reset Job Timer
+			file_throughput_results.write("dt,{},J_ar,{},J_se,{},J_ds,{},J_ss,{},J_ms,{}\n".format(J_timer,Jthroughput_ar_counter,Jthroughput_se_counter,Jthroughput_ds_counter,Jthroughput_ss_counter,Jthroughput_ms_counter))
 			J_timer = 0
-			J_ar_counter = 0
-			J_se_counter = 0
-			J_ds_counter = 0
-			J_ss_counter = 0
-			J_ms_counter = 0
+			Jthroughput_ar_counter = 0
+			Jthroughput_se_counter = 0
+			Jthroughput_ds_counter = 0
+			Jthroughput_ss_counter = 0
+			Jthroughput_ms_counter = 0
+		if (min(Jworkload_ar_counter,Jworkload_se_counter,Jworkload_ds_counter,Jworkload_ss_counter,Jworkload_ms_counter) > workload_acquisition_limit and workload_acquisition_done == False):
+			print 'Finished Workload Acquisition'
+			file_workload_results.write("dt,{},J_ar,{},J_se,{},J_ds,{},J_ss,{},J_ms,{}\n".format(boottime,Jworkload_ar_counter,Jworkload_se_counter,Jworkload_ds_counter,Jthroughput_ss_counter,Jworkload_ms_counter))
+			workload_acquisition_done = True
+			file_workload_results.close()
 		#print "x: {}, y: {}, z: {}, r: {}, p: {}, y: {}".format(pose_x,pose_y,pose_z,pose_roll,pose_pitch,pose_yaw)
 		if mode == 'Execute':
 			if matlabserver_initialized:
@@ -508,7 +530,8 @@ def mainloop():
 			
 	print 'Exiting Program'
 	cv2.destroyAllWindows()
-	file_results.close()
+	
+	
 	if mode == 'Execute':
 		if matlabserver_initialized:
 			matlabserver_socket.close()
@@ -621,7 +644,8 @@ def icarus_msghandler(mysocket):
 		global last_target_x
 		global last_target_y
 		global target_class
-		global J_ms_counter
+		global Jthroughput_ms_counter
+		global Jworkload_ms_counter
 		if xmitmode == 'TCP':
 			packet_type = mysocket.recv(8)
 			packet_length = mysocket.recv(8)
@@ -635,7 +659,8 @@ def icarus_msghandler(mysocket):
 			elif xmitmode == 'UDP':
 				msg = mysocket.recvfrom(packet_length)
 			if packet_type == '$TGT,DFV':
-				J_ms_counter = J_ms_counter +1
+				Jthroughput_ms_counter = Jthroughput_ms_counter +1
+				Jworkload_ms_counter = Jworkload_ms_counter + 1
 				mystr = msg.split(',')
 				if int(mystr[3]) > CONFIDENCE_LIMIT:
 					target_class = mystr[0]
@@ -699,16 +724,26 @@ def initvariables():
 	global flight_mode #flight_running flight_landed
 	global cmd_twist
 	global teleopcmd_pub
-	global J_ar_counter
-	global J_se_counter
-	global J_ds_counter
-	global J_ss_counter
-	global J_ms_counter
-	J_ar_counter = 0
-	J_se_counter = 0
-	J_ds_counter = 0
-	J_ss_counter = 0
-	J_ms_counter = 0
+	global Jthroughput_ar_counter
+	global Jthroughput_se_counter
+	global Jthroughput_ds_counter
+	global Jthroughput_ss_counter
+	global Jthroughput_ms_counter
+	global Jworkload_ar_counter
+	global Jworkload_se_counter
+	global Jworkload_ds_counter
+	global Jworkload_ss_counter
+	global Jworkload_ms_counter
+	Jthroughput_ar_counter = 0
+	Jthroughput_se_counter = 0
+	Jthroughput_ds_counter = 0
+	Jthroughput_ss_counter = 0
+	Jthroughput_ms_counter = 0
+	Jworkload_ar_counter = 0
+	Jworkload_se_counter = 0
+	Jworkload_ds_counter = 0
+	Jworkload_ss_counter = 0
+	Jworkload_ms_counter = 0
 	cmd_twist = Twist()
 	matlabserver_initialized = False
 	matlabserver_enabled = False
