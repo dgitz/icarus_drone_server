@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
-file_throughput_results = open('29APR2014-2-Throughput-P1.csv','w')
-file_workload_results = open('29APR2014-2-Workload-P1.csv','w')
+file_throughput_results = open('30APR2014-2-Throughput-P1.csv','w')
+file_workload_results = open('30APR2014-2-Workload-P1.csv','w')
 import pdb
 import roslib
 roslib.load_manifest('icarus_drone_server')

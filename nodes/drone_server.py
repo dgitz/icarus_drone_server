@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
-file_throughput_results = open('29APR2014-2-Throughput-P1.csv','w')
-file_workload_results = open('29APR2014-2-Workload-P1.csv','w')
+file_throughput_results = open('30APR2014-2-Throughput-P1.csv','w')
+file_workload_results = open('30APR2014-2-Workload-P1.csv','w')
 import pdb
 import roslib
 roslib.load_manifest('icarus_drone_server')
@@ -505,7 +505,7 @@ def mainloop():
 			Jthroughput_ms_counter = 0
 		if (min(Jworkload_ar_counter,Jworkload_se_counter,Jworkload_ds_counter,Jworkload_ss_counter,Jworkload_ms_counter) > workload_acquisition_limit and workload_acquisition_done == False):
 			print 'Finished Workload Acquisition'
-			file_workload_results.write("dt,{},J_ar,{},J_se,{},J_ds,{},J_ss,{},J_ms,{}\n".format(boottime,Jworkload_ar_counter,Jworkload_se_counter,Jworkload_ds_counter,Jthroughput_ss_counter,Jworkload_ms_counter))
+			file_workload_results.write("dt,{},J_ar,{},J_se,{},J_ds,{},J_ss,{},J_ms,{}\n".format(boottime,Jworkload_ar_counter,Jworkload_se_counter,Jworkload_ds_counter,Jworkload_ss_counter,Jworkload_ms_counter))
 			workload_acquisition_done = True
 			file_workload_results.close()
 		#print "x: {}, y: {}, z: {}, r: {}, p: {}, y: {}".format(pose_x,pose_y,pose_z,pose_roll,pose_pitch,pose_yaw)
