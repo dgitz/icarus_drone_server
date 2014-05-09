@@ -39,7 +39,7 @@ if xmitmode == 'UDP':
 	matlabserver_ip = '127.0.0.1'
 	matlabserver_port = 5006
 elif xmitmode == 'TCP':
-	matlabserver_ip = '192.168.0.100'
+	matlabserver_ip = '192.168.0.104'
 	matlabserver_port = 5005
 
 #import rgbdslam.msg
@@ -483,7 +483,7 @@ def mainloop():
 		elapsedtime = (curtime-lasttime)
 		
 		boottime = int((curtime-starttime)*1000)
-		print boottime,Jworkload_ar_counter,Jworkload_se_counter,Jworkload_ds_counter,Jworkload_ss_counter,Jworkload_ms_counter
+		#print boottime,Jworkload_ar_counter,Jworkload_se_counter,Jworkload_ds_counter,Jworkload_ss_counter,Jworkload_ms_counter
 		#sprint boottime
 		updaterate = 1/elapsedtime #Hz
 		#print updaterate
@@ -492,7 +492,7 @@ def mainloop():
 		Jthroughput_ds_counter = Jthroughput_ds_counter + 1
 		Jworkload_ds_counter = Jworkload_ds_counter + 1
 		if (boottime > throughput_acquisition_time and throughput_acquisition_done==False):
-			print 'Finished Throughput Acquisition'
+			#print 'Finished Throughput Acquisition'
 			throughput_acquisition_done = True
 			file_throughput_results.close()
 		if (J_timer > J_time_limit and  boottime <= 300000 and throughput_acquisition_done==False): #Reset Job Timer
@@ -504,7 +504,7 @@ def mainloop():
 			Jthroughput_ss_counter = 0
 			Jthroughput_ms_counter = 0
 		if (min(Jworkload_ar_counter,Jworkload_se_counter,Jworkload_ds_counter,Jworkload_ss_counter,Jworkload_ms_counter) > workload_acquisition_limit and workload_acquisition_done == False):
-			print 'Finished Workload Acquisition'
+			#print 'Finished Workload Acquisition'
 			file_workload_results.write("dt,{},J_ar,{},J_se,{},J_ds,{},J_ss,{},J_ms,{}\n".format(boottime,Jworkload_ar_counter,Jworkload_se_counter,Jworkload_ds_counter,Jworkload_ss_counter,Jworkload_ms_counter))
 			workload_acquisition_done = True
 			file_workload_results.close()
